@@ -1,7 +1,7 @@
 package BoardSpaces;
 
 public class BoardSpace {
-    private int spaceID;
+    private int spaceID; // game board has 40 spaces
     private String name;
     private SpaceType type;
 

@@ -1,5 +1,7 @@
 package BoardSpaces;
 
+import Utilities.Player;
+
 import java.util.ArrayList;
 
 public class BoardSpaceProperty {
@@ -7,6 +9,8 @@ public class BoardSpaceProperty {
     private Street street;
     private int houseCost;
     private ArrayList<Integer> rent = new ArrayList<>(); // 0 = base rent, 1-4 = rent with 1-4 houses, 5 = rent with hotel
+    private int houseCount;
+    private Player owner;
 
     public BoardSpaceProperty(BoardSpace boardSpace) {
         this.boardSpace = boardSpace;

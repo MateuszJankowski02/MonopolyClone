@@ -1,13 +1,13 @@
 package Server;
 
-import Utilities.Player;
+import Utilities.User;
 
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
 
 public class ServerMain {
-    static ArrayList<Player> players = new ArrayList<Player>();
+    static ArrayList<User> users = new ArrayList<User>();
     public static void main(String[] args) throws IOException {
 
 
@@ -23,8 +23,8 @@ public class ServerMain {
                     DataOutputStream dataOut = new DataOutputStream(connectionSocket.getOutputStream());
 
                     String name = dataIn.readUTF();
-                    players.add(new Player(name));
-                    dataOut.writeUTF("Welcome, " + name + "! Your ID is " + players.get(players.size() - 1).getId());
+                    users.add(new User(name));
+                    dataOut.writeUTF("Welcome, " + name + "! Your ID is " + users.get(users.size() - 1).getId());
 
                     connectionSocket.close();
                 } catch (IOException e) {

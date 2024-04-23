@@ -1,6 +1,6 @@
 package Client;
 
-import Utilities.Player;
+import Utilities.User;
 import java.io.*;
 import java.net.*;
 import java.util.Scanner;
@@ -9,7 +9,7 @@ public class ClientMain {
     private static Socket socket;
     private static DataInputStream dataIn;
     private static DataOutputStream dataOut;
-    private static Player player;
+    private static User user;
 
 
     public static void main(String[] args) throws IOException {
@@ -25,7 +25,8 @@ public class ClientMain {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter name:");
         dataOut.writeUTF(scanner.nextLine());
-        // Send calculation details to the server
+        //enter login
+
 
         // Receive and print the server's response
         String serverMessage = dataIn.readUTF();
