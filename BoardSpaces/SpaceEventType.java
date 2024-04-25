@@ -7,5 +7,7 @@ public enum SpaceEventType {
     FREE_PARKING,
     GO_TO_JAIL,
     COLLECT,
-    START
+    INCOME_TAX,
+    LUXURY_TAX,
+    GO
 }

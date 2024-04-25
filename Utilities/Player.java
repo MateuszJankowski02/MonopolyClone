@@ -1,6 +1,6 @@
 package Utilities;
 
-import BoardSpaces.BoardSpaceProperty;
+import BoardSpaces.BoardSpaceStreet;
 
 import java.util.ArrayList;
 
@@ -15,12 +15,11 @@ public class Player {
     private int turnsInJail;
     private int jailCards;
     private boolean bankrupt;
-    private boolean hasRolled;
+    private boolean canRoll;
     private int doublesRolled;
     private int currentRoll;
-    private boolean hasMoved;
     private boolean hisTurn;
-    private ArrayList<BoardSpaceProperty> properties = new ArrayList<>();
+    private ArrayList<BoardSpaceStreet> properties = new ArrayList<>();
 
     public Player(User user) {
         this.id = idCounter++;
@@ -47,11 +46,42 @@ public class Player {
         this.turnsInJail = 0;
         this.jailCards = 0;
         this.bankrupt = false;
-        this.hasRolled = false;
+        this.canRoll = true;
         this.doublesRolled = 0;
         this.currentRoll = 0;
-        this.hasMoved = false;
         this.hisTurn = id == 0;
+    }
+
+    private void addMoney(int amount) {
+        money += amount;
+    }
+
+    private void rollDice() {
+        if (!canRoll || !hisTurn) return;
+        int die1 = (int) (Math.random() * 6) + 1;
+        int die2 = (int) (Math.random() * 6) + 1;
+        currentRoll = die1 + die2;
+        if (die1 == die2) {
+            doublesRolled++;
+        } else {
+            canRoll = false;
+        }
+        moveAmountRolled(currentRoll);
+    }
+
+    private void moveAmountRolled(int diceRoll) {
+        int nextSpace = currentSpace + diceRoll;
+        if (nextSpace > 40) {
+            currentSpace %= diceRoll;
+            addMoney(200);
+        }else {
+            currentSpace = nextSpace;
+        }
+    }
+
+    private void endTurn() {
+        hisTurn = false;
+        canRoll = true;
     }
 
 

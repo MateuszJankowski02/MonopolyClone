@@ -1,6 +1,6 @@
 package BoardSpaces;
 
-public class BoardSpaceEvent {
+public class BoardSpaceEvent implements Board{
     private BoardSpace boardSpace;
     private SpaceEventType spaceEventType;
 

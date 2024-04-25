@@ -1,6 +1,6 @@
 package BoardSpaces;
 
-public class BoardSpace {
+public class BoardSpace implements Board{
     private int spaceID; // game board has 40 spaces
     private String name;
     private SpaceType type;
