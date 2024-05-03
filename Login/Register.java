@@ -1,8 +1,6 @@
 package Login;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 
 public class Register {
     public void registerUser(String name, String login, String password) {
@@ -13,5 +11,19 @@ public class Register {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    public boolean checkLogin(String login) {
+        try (BufferedReader reader = new BufferedReader(new FileReader("users.txt"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(" ");
+                if (parts[0].equals(login)) {
+                    return true;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }

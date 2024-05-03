@@ -5,7 +5,7 @@ import java.io.FileReader;
 import java.io.IOException;
 
 public class Authenticate {
-    public User authenticateUser(String login, String password) {
+    public static User authenticateUser(String login, String password) {
         try (BufferedReader reader = new BufferedReader(new FileReader("users.txt"))) {
             String line;
             while ((line = reader.readLine()) != null) {
