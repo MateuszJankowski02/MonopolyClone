@@ -1,6 +1,6 @@
 package Server;
 
-import Utilities.User;
+import Login.User;
 
 import java.io.*;
 import java.net.*;
@@ -9,8 +9,6 @@ import java.util.ArrayList;
 public class ServerMain {
     static ArrayList<User> users = new ArrayList<User>();
     public static void main(String[] args) throws IOException {
-
-
         ServerSocket serverSocket = new ServerSocket(5001);
         System.out.println("Server Listening on port 5001...");
 
@@ -23,7 +21,7 @@ public class ServerMain {
                     DataOutputStream dataOut = new DataOutputStream(connectionSocket.getOutputStream());
 
                     String name = dataIn.readUTF();
-                    users.add(new User(name));
+                    //users.add(new User(name));
                     dataOut.writeUTF("Welcome, " + name + "! Your ID is " + users.get(users.size() - 1).getId());
 
                     connectionSocket.close();

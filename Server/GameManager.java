@@ -316,9 +316,10 @@ public class GameManager {
     }
 
     public void populateBoard() {
-        // Populate boardSpaces with all the spaces
+        populateStreets();
+        populateSpaces();
     }
     public void startGame() {
-
+        populateBoard();
     }
 }

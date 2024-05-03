@@ -1,6 +1,7 @@
 package Utilities;
 
 import BoardSpaces.BoardSpaceStreet;
+import Login.User;
 
 import java.util.ArrayList;
 

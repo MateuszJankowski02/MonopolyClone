@@ -1,6 +1,6 @@
 package Client;
 
-import Utilities.User;
+import Login.User;
 import java.io.*;
 import java.net.*;
 import java.util.Scanner;

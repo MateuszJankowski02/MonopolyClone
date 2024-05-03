@@ -1,4 +1,4 @@
-package Utilities;
+package Login;
 
 public class User {
     private static int idCounter = 0;
@@ -7,6 +7,7 @@ public class User {
     private String login;
     private String password;
     private int score;
+    private boolean autheticated;
 
     public User(String name, String login, String password) {
         this.id = idCounter++;
@@ -30,5 +31,10 @@ public class User {
 
     public void incrementScore() {
         score++;
+    }
+
+    @Override
+    public String toString() {
+        return login + " " + password + " " + nickname;
     }
 }
