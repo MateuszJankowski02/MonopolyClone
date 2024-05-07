@@ -17,18 +17,6 @@ public class ServerMain {
     static HashMap<String, Lobby> lobbies = new HashMap<>();
 
     public static void main(String[] args) throws IOException {
-        /*
-        Help me crate a monopoly game from my exiting files.
-        ServerMain.java is responsible for the server side of the game.
-        The server should be able to accept multiple clients.
-        The server should be able to authenticate users.
-        The server should be able to register users.
-        The server should be able to create lobbies.
-        The server should be able to join lobbies.
-        The server should be able to send and receive messages from clients.
-        The server should be able to send and receive game data from clients.
-        Use threads to handle multiple clients.
-         */
         Register register = new Register();
         Login login = new Login();
 
@@ -87,10 +75,13 @@ public class ServerMain {
                                 if(lobbyJoin.getPlayers().size() < lobbyJoin.getMaxPlayers()){
                                     lobbyJoin.addPlayer(player);
                                     dataOut.writeUTF("Joined lobby");
+                                    dataOut.writeBoolean(true);
                                 }else if (lobbyJoin.isFull()){
                                     dataOut.writeUTF("Lobby is full");
+                                    dataOut.writeBoolean(false);
                                 }else{
                                     dataOut.writeUTF("Lobby does not exist");
+                                    dataOut.writeBoolean(false);
                                 }
                                 break;
                             case "listLobbies":

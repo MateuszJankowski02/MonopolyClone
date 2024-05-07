@@ -15,19 +15,9 @@ public class ClientMain {
     private static DataOutputStream dataOut;
     private static User loggedUser;
     private static boolean loggedIn = false;
+    private static boolean connectedToLobby = false;
 
     public static void main(String[] args) throws IOException {
-        /*
-        Help me crate a monopoly game from my exiting files.
-        ClientMain.java is responsible for the client side of the game.
-        The client should be able to connect to the server, login, register, create a lobby, join a lobby.
-        The client should send log all their actions to the server in format: [timestamp] [username] [action]
-        The client should be able to send and receive messages from the server.
-        The client should be able to send and receive game data from the server.
-        Use threads to handle multiple clients.
-        Clients should be able to play the game in real-time.
-        Clients should be able to see each other's lobbies and join them.
-         */
         socket = new Socket("localhost", 8080);
         System.out.println("Connected to server");
         dataIn = new DataInputStream(socket.getInputStream());
@@ -74,7 +64,7 @@ public class ClientMain {
             }
         }
 
-        while (true) {
+        while (!connectedToLobby) {
             System.out.println("1. Create lobby");
             System.out.println("2. List lobbies");
             System.out.println("3. Join lobby");
@@ -92,6 +82,10 @@ public class ClientMain {
                     int maxPlayers = scanner.nextInt();
                     dataOut.writeInt(maxPlayers);
                     dataOut.writeInt(loggedUser.getId());
+                    connectedToLobby = true;
+                    // Wait for a response from the server
+                    String serverResponseCreate = dataIn.readUTF();
+                    System.out.println(serverResponseCreate);
                     break;
                 case 2:
                     dataOut.writeUTF("listLobbies");
@@ -111,6 +105,12 @@ public class ClientMain {
                     dataOut.writeUTF(lobbyNameJoin);
                     dataOut.writeInt(loggedUser.getId());
                     dataIn.readUTF();
+                    if (dataIn.readBoolean()) {
+                        connectedToLobby = true;
+                    }
+                    // Wait for a response from the server
+                    String serverResponseJoin = dataIn.readUTF();
+                    System.out.println(serverResponseJoin);
                     break;
                 case 4:
                     System.exit(0);
