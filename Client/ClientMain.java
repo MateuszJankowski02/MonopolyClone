@@ -13,8 +13,7 @@ public class ClientMain {
     private static Socket socket;
     private static DataInputStream dataIn;
     private static DataOutputStream dataOut;
-    private static User loggedUser;
-    private static boolean loggedIn = false;
+    private static User loggedUser = null;
     private static boolean connectedToLobby = false;
 
     public static void main(String[] args) throws IOException {
@@ -25,7 +24,7 @@ public class ClientMain {
 
         Scanner scanner = new Scanner(System.in);
         System.out.println("Welcome to Monopoly!");
-        while(!loggedIn) {
+        while(loggedUser == null) {
             System.out.println("1. Login");
             System.out.println("2. Register");
             System.out.print("Choose an option: ");
@@ -41,8 +40,7 @@ public class ClientMain {
                     String password = scanner.nextLine();
                     dataOut.writeUTF(password); // write password to server
                     System.out.print(dataIn.readUTF()); // read response from server
-                    loggedIn = dataIn.readBoolean(); // read boolean from server
-                    if (loggedIn) {
+                    if (dataIn.readBoolean()) {
                         loggedUser = ServerMain.users.getUserByLogin(username);
                     }
                     break;
@@ -104,7 +102,7 @@ public class ClientMain {
                     String lobbyNameJoin = scanner.nextLine();
                     dataOut.writeUTF(lobbyNameJoin);
                     dataOut.writeInt(loggedUser.getId());
-                    dataIn.readUTF();
+                    System.out.println(dataIn.readUTF());
                     if (dataIn.readBoolean()) {
                         connectedToLobby = true;
                     }

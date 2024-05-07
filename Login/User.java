@@ -12,7 +12,7 @@ public class User {
     private String login;
     private String password;
     private int score;
-    private boolean autheticated;
+    private boolean isloggedIn = false;
 
     public User(String name, String login, String password) {
         this.id = idCounter++;
@@ -23,7 +23,7 @@ public class User {
     }
 
     public static class Users {
-        private ArrayList<User> users = new ArrayList<>();
+        ArrayList<User> users = new ArrayList<>();
 
         public Users(){
             refresh();
@@ -66,6 +66,14 @@ public class User {
 
     }
 
+    public Boolean getIsLoggedIn() {
+        return isloggedIn;
+    }
+
+    public void setIsLoggedIn(boolean isLoggedIn){
+        this.isloggedIn = isLoggedIn;
+    }
+
     public String getLogin() {
         return login;
     }
@@ -84,6 +92,10 @@ public class User {
 
     public void incrementScore() {
         score++;
+    }
+
+    public String getPassword() {
+        return password;
     }
 
     @Override

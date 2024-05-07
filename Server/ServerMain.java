@@ -72,17 +72,24 @@ public class ServerMain {
                                 String lobbyNameJoin = dataIn.readUTF();
                                 User player = users.getUserById(dataIn.readInt());
                                 Lobby lobbyJoin = lobbies.get(lobbyNameJoin);
+                                if (lobbyJoin == null){
+                                    dataOut.writeUTF("Lobby does not exist");
+                                    dataOut.writeBoolean(false);
+                                    break;
+                                }
                                 if(lobbyJoin.getPlayers().size() < lobbyJoin.getMaxPlayers()){
                                     lobbyJoin.addPlayer(player);
                                     dataOut.writeUTF("Joined lobby");
                                     dataOut.writeBoolean(true);
-                                }else if (lobbyJoin.isFull()){
+                                    break;
+                                }
+                                if (lobbyJoin.isFull()){
                                     dataOut.writeUTF("Lobby is full");
                                     dataOut.writeBoolean(false);
-                                }else{
-                                    dataOut.writeUTF("Lobby does not exist");
-                                    dataOut.writeBoolean(false);
+                                    break;
                                 }
+                                dataOut.writeUTF("Unknown error occurred");
+                                dataOut.writeBoolean(false);
                                 break;
                             case "listLobbies":
                                 dataOut.writeInt(lobbies.size());
