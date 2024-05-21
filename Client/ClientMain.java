@@ -1,5 +1,159 @@
 package Client;
 
+import javafx.application.Application;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.Socket;
+
+import Login.User;
+import Server.ServerMain;
+
+public class ClientMain extends Application {
+    private static Socket socket;
+    private static DataInputStream dataIn;
+    private static DataOutputStream dataOut;
+    private static User loggedUser = null;
+    private static boolean connectedToLobby = false;
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+
+    @Override
+    public void start(Stage primaryStage) throws IOException {
+        socket = new Socket("localhost", 8080);
+        dataIn = new DataInputStream(socket.getInputStream());
+        dataOut = new DataOutputStream(socket.getOutputStream());
+
+        // Login scene
+        TextField usernameField = new TextField();
+        usernameField.setPromptText("Enter your username");
+        PasswordField passwordField = new PasswordField();
+        passwordField.setPromptText("Enter your password");
+        Button loginButton = new Button("Login");
+        Button registerButton = new Button("Register");
+        VBox loginLayout = new VBox(10, usernameField, passwordField, loginButton, registerButton);
+        loginLayout.setAlignment(Pos.CENTER);
+        Scene loginScene = new Scene(loginLayout, 300, 200);
+
+        // Registration scene
+        TextField regUsernameField = new TextField();
+        regUsernameField.setPromptText("Enter your username");
+        TextField regNicknameField = new TextField();
+        regNicknameField.setPromptText("Enter your nickname");
+        PasswordField regPasswordField = new PasswordField();
+        regPasswordField.setPromptText("Enter your password");
+        PasswordField confirmPasswordField = new PasswordField();
+        confirmPasswordField.setPromptText("Confirm your password");
+        Button confirmButton = new Button("Confirm Registration");
+        VBox registerLayout = new VBox(10, regUsernameField, regNicknameField, regPasswordField, confirmPasswordField, confirmButton);
+        registerLayout.setAlignment(Pos.CENTER);
+        Scene registerScene = new Scene(registerLayout, 300, 200);
+
+
+        // Lobby scene
+        Button createLobbyButton = new Button("Create lobby");
+        Button listLobbiesButton = new Button("List lobbies");
+        Button joinLobbyButton = new Button("Join lobby");
+        Button exitButton = new Button("Exit");
+        VBox lobbyLayout = new VBox(10, createLobbyButton, listLobbiesButton, joinLobbyButton, exitButton);
+        lobbyLayout.setAlignment(Pos.CENTER);
+        Scene lobbyScene = new Scene(lobbyLayout, 300, 200);
+
+        // Handle button actions
+        loginButton.setOnAction(e -> {
+            try {
+                dataOut.writeUTF("login");
+                dataOut.writeUTF(usernameField.getText());
+                dataOut.writeUTF(passwordField.getText());
+                if (dataIn.readBoolean()) {
+                    loggedUser = ServerMain.users.getUserByLogin(usernameField.getText());
+                    primaryStage.setScene(lobbyScene);
+                } else {
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "Login failed", ButtonType.OK);
+                    alert.showAndWait();
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        registerButton.setOnAction(e -> {
+            primaryStage.setScene(registerScene);
+        });
+
+        confirmButton.setOnAction(e -> {
+            try {
+                String username = regUsernameField.getText();
+                String nickname = regNicknameField.getText();
+                String password = regPasswordField.getText();
+                String confirmPassword = confirmPasswordField.getText();
+                if (username.isEmpty() || nickname.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "All fields must be filled", ButtonType.OK);
+                    alert.showAndWait();
+                    return;
+                }
+                if (!password.equals(confirmPassword)) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "Passwords do not match", ButtonType.OK);
+                    alert.showAndWait();
+                    return;
+                }
+                dataOut.writeUTF("register");
+                dataOut.writeUTF(nickname);
+                dataOut.writeUTF(username);
+                dataOut.writeUTF(password);
+                Alert alert = new Alert(Alert.AlertType.INFORMATION, dataIn.readUTF(), ButtonType.OK);
+                alert.showAndWait();
+                primaryStage.setScene(loginScene);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        });
+        /*
+        case 2:
+                    dataOut.writeUTF("register"); // write option to server 1
+                    System.out.print("Enter your name: ");
+                    String nickname = scanner.nextLine();
+                    dataOut.writeUTF(nickname); // write nickname to server 2
+                    System.out.print("Enter your username: ");
+                    String login = scanner.nextLine();
+                    dataOut.writeUTF(login); // write login to server 3
+                    System.out.print("Enter your password: ");
+                    String pass = scanner.nextLine();
+                    dataOut.writeUTF(pass); // write password to server 4
+                    System.out.print(dataIn.readUTF()); // read response from server 5
+                    break;
+         */
+
+        createLobbyButton.setOnAction(e -> {
+            // Handle create lobby action
+        });
+
+        listLobbiesButton.setOnAction(e -> {
+            // Handle list lobbies action
+        });
+
+        joinLobbyButton.setOnAction(e -> {
+            // Handle join lobby action
+        });
+
+        exitButton.setOnAction(e -> System.exit(0));
+
+        primaryStage.setScene(loginScene);
+        primaryStage.show();
+    }
+}
+
+/*
+package Client;
+
 import Login.Login;
 import Login.Register;
 import Login.User;
@@ -118,3 +272,4 @@ public class ClientMain {
         }
     }
 }
+ */
