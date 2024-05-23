@@ -156,6 +156,7 @@ public class ServerMain {
         }
     }
 
+
     static class ListLobbiesCommand implements Command {
         @Override
         public void execute(DataInputStream dataIn, DataOutputStream dataOut) throws IOException {
