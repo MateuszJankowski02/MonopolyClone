@@ -18,7 +18,6 @@ public class ServerMain {
 
     public static void main(String[] args) throws IOException {
         Register register = new Register();
-        Login login = new Login();
 
         ServerSocket server = new ServerSocket(8080);
         System.out.println("Server started on port 8080");
@@ -36,12 +35,13 @@ public class ServerMain {
                             case "login":
                                 String username = dataIn.readUTF(); // read username from client 2
                                 String password = dataIn.readUTF(); // read password from client 3
-                                User currentUser = login.loginUser(username, password);
-                                if(currentUser != null){
-                                    dataOut.writeUTF("login successful\n"); // write response to client 4
+                                System.out.println("User " + username + " is trying to log in with password " + password);
+
+                                if(Login.loginUser(username, password) != null){
+                                    System.out.println("User " + username + " logged in successfully");
                                     dataOut.writeBoolean(true); // write boolean to client 5
                                 }else{
-                                    dataOut.writeUTF("login failed\n"); // write response to client 4
+                                    System.out.println("User " + username + " failed to log in");
                                     dataOut.writeBoolean(false); // write boolean to client 5
                                 }
                                 break;

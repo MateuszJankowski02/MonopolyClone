@@ -1,6 +1,7 @@
-test123 test123 test123
-admin admin admin
-mateusz mateusz mateusz
-kamil kamil kamil
-maciek rafal maciek
-rafal maciek rafal
+test123 test123 test123 false
+admin admin admin false
+mateusz mateusz mateusz false
+kamil kamil kamil false
+maciek rafal maciek false
+rafal maciek rafal false
+testtest testtest testest false

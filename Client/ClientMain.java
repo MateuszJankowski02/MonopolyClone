@@ -13,13 +13,14 @@ import java.io.IOException;
 import java.net.Socket;
 
 import Login.User;
+import Login.Login;
 import Server.ServerMain;
 
 public class ClientMain extends Application {
     private static Socket socket;
     private static DataInputStream dataIn;
     private static DataOutputStream dataOut;
-    private static User loggedUser = null;
+    public static User loggedUser = null;
     private static boolean connectedToLobby = false;
 
     public static void main(String[] args) {
@@ -38,8 +39,20 @@ public class ClientMain extends Application {
         PasswordField passwordField = new PasswordField();
         passwordField.setPromptText("Enter your password");
         Button loginButton = new Button("Login");
-        Button registerButton = new Button("Register");
-        VBox loginLayout = new VBox(10, usernameField, passwordField, loginButton, registerButton);
+        Button registerSceneButton = new Button("Register");
+
+        // Create a ListView to display the list of users
+        ListView<String> usersList = new ListView<>();
+
+        // Create a new instance of the Users class
+        User.Users users = new User.Users();
+
+        // Loop through the list of users and add each user's login to the ListView
+        for (User user : users.users) {
+            usersList.getItems().add(user.getLogin());
+        }
+
+        VBox loginLayout = new VBox(10, usernameField, passwordField, loginButton, registerSceneButton, usersList);
         loginLayout.setAlignment(Pos.CENTER);
         Scene loginScene = new Scene(loginLayout, 300, 200);
 
@@ -52,11 +65,10 @@ public class ClientMain extends Application {
         regPasswordField.setPromptText("Enter your password");
         PasswordField confirmPasswordField = new PasswordField();
         confirmPasswordField.setPromptText("Confirm your password");
-        Button confirmButton = new Button("Confirm Registration");
-        VBox registerLayout = new VBox(10, regUsernameField, regNicknameField, regPasswordField, confirmPasswordField, confirmButton);
+        Button confirmRegisterButton = new Button("Confirm Registration");
+        VBox registerLayout = new VBox(10, regUsernameField, regNicknameField, regPasswordField, confirmPasswordField, confirmRegisterButton);
         registerLayout.setAlignment(Pos.CENTER);
         Scene registerScene = new Scene(registerLayout, 300, 200);
-
 
         // Lobby scene
         Button createLobbyButton = new Button("Create lobby");
@@ -67,29 +79,60 @@ public class ClientMain extends Application {
         lobbyLayout.setAlignment(Pos.CENTER);
         Scene lobbyScene = new Scene(lobbyLayout, 300, 200);
 
+        // Create lobby scene
+        TextField lobbyNameField = new TextField();
+        lobbyNameField.setPromptText("Enter lobby name");
+        TextField maxPlayersField = new TextField();
+        maxPlayersField.setPromptText("Enter max players");
+        Button confirmCreateLobbyButton = new Button("Confirm");
+        VBox createLobbyLayout = new VBox(10, lobbyNameField, maxPlayersField, confirmCreateLobbyButton);
+        createLobbyLayout.setAlignment(Pos.CENTER);
+        Scene createLobbyScene = new Scene(createLobbyLayout, 300, 200);
+
+        // List lobbies scene
+        ListView<String> lobbiesList = new ListView<>();
+        Button refreshLobbiesButton = new Button("Refresh");
+        VBox listLobbiesLayout = new VBox(10, lobbiesList, refreshLobbiesButton);
+        listLobbiesLayout.setAlignment(Pos.CENTER);
+        Scene listLobbiesScene = new Scene(listLobbiesLayout, 300, 200);
+
+
         // Handle button actions
         loginButton.setOnAction(e -> {
             try {
+                System.out.println("Sending login request to server...");
                 dataOut.writeUTF("login");
                 dataOut.writeUTF(usernameField.getText());
                 dataOut.writeUTF(passwordField.getText());
+                System.out.println("Waiting for response from server...");
                 if (dataIn.readBoolean()) {
                     loggedUser = ServerMain.users.getUserByLogin(usernameField.getText());
+                    System.out.println("Login successful");
                     primaryStage.setScene(lobbyScene);
                 } else {
+                    System.out.println("Login failed");
                     Alert alert = new Alert(Alert.AlertType.ERROR, "Login failed", ButtonType.OK);
                     alert.showAndWait();
                 }
             } catch (IOException ex) {
+                System.out.println("An error occurred during the login process");
                 ex.printStackTrace();
             }
         });
 
-        registerButton.setOnAction(e -> {
+        registerSceneButton.setOnAction(e -> {
             primaryStage.setScene(registerScene);
         });
 
-        confirmButton.setOnAction(e -> {
+        createLobbyButton.setOnAction(e -> {
+            primaryStage.setScene(createLobbyScene);
+        });
+
+        listLobbiesButton.setOnAction(e -> {
+            primaryStage.setScene(listLobbiesScene);
+        });
+
+        confirmRegisterButton.setOnAction(e -> {
             try {
                 String username = regUsernameField.getText();
                 String nickname = regNicknameField.getText();
@@ -116,35 +159,63 @@ public class ClientMain extends Application {
                 ex.printStackTrace();
             }
         });
-        /*
-        case 2:
-                    dataOut.writeUTF("register"); // write option to server 1
-                    System.out.print("Enter your name: ");
-                    String nickname = scanner.nextLine();
-                    dataOut.writeUTF(nickname); // write nickname to server 2
-                    System.out.print("Enter your username: ");
-                    String login = scanner.nextLine();
-                    dataOut.writeUTF(login); // write login to server 3
-                    System.out.print("Enter your password: ");
-                    String pass = scanner.nextLine();
-                    dataOut.writeUTF(pass); // write password to server 4
-                    System.out.print(dataIn.readUTF()); // read response from server 5
-                    break;
-         */
 
-        createLobbyButton.setOnAction(e -> {
-            // Handle create lobby action
-        });
+        confirmCreateLobbyButton.setOnAction(e -> {
+            try {
+                String lobbyName = lobbyNameField.getText();
+                int maxPlayers = Integer.parseInt(maxPlayersField.getText());
 
-        listLobbiesButton.setOnAction(e -> {
-            // Handle list lobbies action
+                // Send request to server to create a new lobby
+                dataOut.writeUTF("createLobby");
+                dataOut.writeUTF(lobbyName);
+                dataOut.writeInt(maxPlayers);
+                dataOut.writeInt(loggedUser.getId());
+
+                // Read the response from the server
+                String serverResponse = dataIn.readUTF();
+                Alert alert = new Alert(Alert.AlertType.INFORMATION, serverResponse, ButtonType.OK);
+                alert.showAndWait();
+
+                // If the lobby was created successfully, switch to the lobby scene
+                if (dataIn.readBoolean()) {
+                    primaryStage.setScene(lobbyScene);
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            } catch (NumberFormatException ex) {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Max players must be a number", ButtonType.OK);
+                alert.showAndWait();
+            }
         });
 
         joinLobbyButton.setOnAction(e -> {
             // Handle join lobby action
         });
 
+        refreshLobbiesButton.setOnAction(e -> {
+            try {
+                // Send request to server to fetch list of lobbies
+                dataOut.writeUTF("listLobbies");
+
+                // Read the number of lobbies from the server
+                int lobbiesSize = dataIn.readInt();
+
+                // Clear the current list of lobbies
+                lobbiesList.getItems().clear();
+
+                // Read each lobby from the server and add it to the ListView
+                for(int i = 0; i < lobbiesSize; i++) {
+                    String lobbyName = dataIn.readUTF();
+                    lobbiesList.getItems().add(lobbyName);
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        });
+
         exitButton.setOnAction(e -> System.exit(0));
+
+        Runtime.getRuntime().addShutdownHook(new Thread(Login::logoutUser));
 
         primaryStage.setScene(loginScene);
         primaryStage.show();
