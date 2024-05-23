@@ -34,26 +34,7 @@ public class ClientMain extends Application {
         dataOut = new DataOutputStream(socket.getOutputStream());
 
         // Login scene
-        TextField usernameField = new TextField();
-        usernameField.setPromptText("Enter your username");
-        PasswordField passwordField = new PasswordField();
-        passwordField.setPromptText("Enter your password");
-        Button loginButton = new Button("Login");
-        Button registerSceneButton = new Button("Register");
-
-        // Create a ListView to display the list of users
-        ListView<String> usersList = new ListView<>();
-
-        // Create a new instance of the Users class
-        User.Users users = new User.Users();
-
-        // Loop through the list of users and add each user's login to the ListView
-        for (User user : users.users) {
-            usersList.getItems().add(user.getLogin());
-        }
-
-        VBox loginLayout = new VBox(10, usernameField, passwordField, loginButton, registerSceneButton, usersList);
-        loginLayout.setAlignment(Pos.CENTER);
+        LoginLayout loginLayout = new LoginLayout();
         Scene loginScene = new Scene(loginLayout, 300, 200);
 
         // Registration scene
@@ -70,14 +51,14 @@ public class ClientMain extends Application {
         registerLayout.setAlignment(Pos.CENTER);
         Scene registerScene = new Scene(registerLayout, 300, 200);
 
-        // Lobby scene
+        // Main menu scene
         Button createLobbyButton = new Button("Create lobby");
         Button listLobbiesButton = new Button("List lobbies");
         Button joinLobbyButton = new Button("Join lobby");
         Button exitButton = new Button("Exit");
-        VBox lobbyLayout = new VBox(10, createLobbyButton, listLobbiesButton, joinLobbyButton, exitButton);
-        lobbyLayout.setAlignment(Pos.CENTER);
-        Scene lobbyScene = new Scene(lobbyLayout, 300, 200);
+        VBox mainMenuLayout = new VBox(10, createLobbyButton, listLobbiesButton, joinLobbyButton, exitButton);
+        mainMenuLayout.setAlignment(Pos.CENTER);
+        Scene mainMenuScene = new Scene(mainMenuLayout, 300, 200);
 
         // Create lobby scene
         TextField lobbyNameField = new TextField();
@@ -98,17 +79,17 @@ public class ClientMain extends Application {
 
 
         // Handle button actions
-        loginButton.setOnAction(e -> {
+        loginLayout.getLoginButton().setOnAction(e -> {
             try {
                 System.out.println("Sending login request to server...");
                 dataOut.writeUTF("login");
-                dataOut.writeUTF(usernameField.getText());
-                dataOut.writeUTF(passwordField.getText());
+                dataOut.writeUTF(loginLayout.getUsernameField().getText());
+                dataOut.writeUTF(loginLayout.getPasswordField().getText());
                 System.out.println("Waiting for response from server...");
                 if (dataIn.readBoolean()) {
-                    loggedUser = ServerMain.users.getUserByLogin(usernameField.getText());
+                    loggedUser = ServerMain.users.getUserByLogin(loginLayout.getUsernameField().getText());
                     System.out.println("Login successful");
-                    primaryStage.setScene(lobbyScene);
+                    primaryStage.setScene(mainMenuScene);
                 } else {
                     System.out.println("Login failed");
                     Alert alert = new Alert(Alert.AlertType.ERROR, "Login failed", ButtonType.OK);
@@ -120,7 +101,7 @@ public class ClientMain extends Application {
             }
         });
 
-        registerSceneButton.setOnAction(e -> {
+        loginLayout.getRegisterButton().setOnAction(e -> {
             primaryStage.setScene(registerScene);
         });
 
@@ -178,7 +159,7 @@ public class ClientMain extends Application {
 
                 // If the lobby was created successfully, switch to the lobby scene
                 if (dataIn.readBoolean()) {
-                    primaryStage.setScene(lobbyScene);
+                    primaryStage.setScene(mainMenuScene);
                 }
             } catch (IOException ex) {
                 ex.printStackTrace();
@@ -221,126 +202,3 @@ public class ClientMain extends Application {
         primaryStage.show();
     }
 }
-
-/*
-package Client;
-
-import Login.Login;
-import Login.Register;
-import Login.User;
-import Server.ServerMain;
-
-import java.io.*;
-import java.net.*;
-import java.util.Scanner;
-
-public class ClientMain {
-    private static Socket socket;
-    private static DataInputStream dataIn;
-    private static DataOutputStream dataOut;
-    private static User loggedUser = null;
-    private static boolean connectedToLobby = false;
-
-    public static void main(String[] args) throws IOException {
-        socket = new Socket("localhost", 8080);
-        System.out.println("Connected to server");
-        dataIn = new DataInputStream(socket.getInputStream());
-        dataOut = new DataOutputStream(socket.getOutputStream());
-
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Welcome to Monopoly!");
-        while(loggedUser == null) {
-            System.out.println("1. Login");
-            System.out.println("2. Register");
-            System.out.print("Choose an option: ");
-            int option = scanner.nextInt();
-            scanner.nextLine();
-            switch (option) {
-                case 1:
-                    dataOut.writeUTF("login"); // write option to server
-                    System.out.print("Enter your username: ");
-                    String username = scanner.nextLine();
-                    dataOut.writeUTF(username); // write username to server
-                    System.out.print("Enter your password: ");
-                    String password = scanner.nextLine();
-                    dataOut.writeUTF(password); // write password to server
-                    System.out.print(dataIn.readUTF()); // read response from server
-                    if (dataIn.readBoolean()) {
-                        loggedUser = ServerMain.users.getUserByLogin(username);
-                    }
-                    break;
-                case 2:
-                    dataOut.writeUTF("register"); // write option to server 1
-                    System.out.print("Enter your name: ");
-                    String nickname = scanner.nextLine();
-                    dataOut.writeUTF(nickname); // write nickname to server 2
-                    System.out.print("Enter your username: ");
-                    String login = scanner.nextLine();
-                    dataOut.writeUTF(login); // write login to server 3
-                    System.out.print("Enter your password: ");
-                    String pass = scanner.nextLine();
-                    dataOut.writeUTF(pass); // write password to server 4
-                    System.out.print(dataIn.readUTF()); // read response from server 5
-                    break;
-                default:
-                    System.out.println("Invalid option!");
-            }
-        }
-
-        while (!connectedToLobby) {
-            System.out.println("1. Create lobby");
-            System.out.println("2. List lobbies");
-            System.out.println("3. Join lobby");
-            System.out.println("4. Exit");
-            System.out.print("Choose an option: ");
-            int option = scanner.nextInt();
-            scanner.nextLine();
-            switch (option) {
-                case 1:
-                    dataOut.writeUTF("createLobby");
-                    System.out.print("Enter lobby name: ");
-                    String lobbyName = scanner.nextLine();
-                    dataOut.writeUTF(lobbyName);
-                    System.out.print("Enter max players: ");
-                    int maxPlayers = scanner.nextInt();
-                    dataOut.writeInt(maxPlayers);
-                    dataOut.writeInt(loggedUser.getId());
-                    connectedToLobby = true;
-                    // Wait for a response from the server
-                    String serverResponseCreate = dataIn.readUTF();
-                    System.out.println(serverResponseCreate);
-                    break;
-                case 2:
-                    dataOut.writeUTF("listLobbies");
-                    int lobbiesSize = dataIn.readInt();
-                    for(int i = 0; i < lobbiesSize; i++) {
-                        System.out.print("Name: " + dataIn.readUTF() + " | ");
-                        System.out.print("Player count: " + dataIn.readUTF() + " | ");
-                        System.out.print("Max players: " + dataIn.readUTF() + " | ");
-                        System.out.print("Owner: " + dataIn.readUTF() + " | ");
-                        System.out.print("\n");
-                    }
-                    break;
-                case 3:
-                    dataOut.writeUTF("joinLobby");
-                    System.out.print("Enter lobby name: ");
-                    String lobbyNameJoin = scanner.nextLine();
-                    dataOut.writeUTF(lobbyNameJoin);
-                    dataOut.writeInt(loggedUser.getId());
-                    System.out.println(dataIn.readUTF());
-                    if (dataIn.readBoolean()) {
-                        connectedToLobby = true;
-                    }
-                    // Wait for a response from the server
-                    String serverResponseJoin = dataIn.readUTF();
-                    System.out.println(serverResponseJoin);
-                    break;
-                case 4:
-                    System.exit(0);
-                default:
-                    System.out.println("Invalid option!");
-            }
-        }
-    }
-}
- */
