@@ -57,6 +57,7 @@ public class ServerMain {
         commandMap.put("createLobby", new CreateLobbyCommand());
         commandMap.put("joinLobby", new JoinLobbyCommand());
         commandMap.put("listLobbies", new ListLobbiesCommand());
+        commandMap.put("getLobbyPlayers", new GetLobbyPlayersCommand());
     }
 
     interface Command {
@@ -156,7 +157,6 @@ public class ServerMain {
         }
     }
 
-
     static class ListLobbiesCommand implements Command {
         @Override
         public void execute(DataInputStream dataIn, DataOutputStream dataOut) throws IOException {
@@ -169,6 +169,27 @@ public class ServerMain {
                     dataOut.writeUTF(String.valueOf(lobby.getPlayers().size()));
                     dataOut.writeUTF(String.valueOf(lobby.getMaxPlayers()));
                     dataOut.writeUTF(lobby.getOwner().getNickname());
+                }
+            } finally {
+                lobbiesLock.readLock().unlock();
+            }
+        }
+    }
+
+    static class GetLobbyPlayersCommand implements Command {
+        @Override
+        public void execute(DataInputStream dataIn, DataOutputStream dataOut) throws IOException {
+            String lobbyName = dataIn.readUTF();
+            lobbiesLock.readLock().lock();
+            try {
+                Lobby lobby = lobbies.get(lobbyName);
+                if (lobby != null) {
+                    dataOut.writeInt(lobby.getPlayers().size());
+                    for (User player : lobby.getPlayers()) {
+                        dataOut.writeUTF(player.getNickname());
+                    }
+                } else {
+                    dataOut.writeInt(0);
                 }
             } finally {
                 lobbiesLock.readLock().unlock();
