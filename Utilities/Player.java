@@ -57,7 +57,7 @@ public class Player {
         money += amount;
     }
 
-    private void rollDice() {
+    public void rollDice() {
         if (!canRoll || !hisTurn) return;
         int die1 = (int) (Math.random() * 6) + 1;
         int die2 = (int) (Math.random() * 6) + 1;
@@ -80,9 +80,13 @@ public class Player {
         }
     }
 
-    private void endTurn() {
+    public void endTurn() {
         hisTurn = false;
         canRoll = true;
+    }
+
+    public User getUser() {
+        return user;
     }
 
 

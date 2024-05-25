@@ -1,6 +1,8 @@
+// File: ClientMain.java
 package Client;
 
 import Login.Login;
+import Utilities.Player;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -11,6 +13,8 @@ import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -18,7 +22,6 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import javafx.application.Platform;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -34,6 +37,14 @@ public class ClientMain extends Application {
     public ListView<String> lobbyPlayersList;
     private ExecutorService executorService;
     private Timer lobbyPlayersTimer;
+    private Scene gameScene;
+    private Label currentPlayerLabel;
+    private Label diceRollLabel;
+    private Button rollDiceButton;
+    private Button endTurnButton;
+    private Player currentPlayer = null;
+    private String currentLobbyName = null;
+    private int currentGameID;
 
     public static void main(String[] args) {
         launch(args);
@@ -95,9 +106,22 @@ public class ClientMain extends Application {
         // Lobby scene
         lobbyPlayersList = new ListView<>();
         Button leaveLobbyButton = new Button("Leave Lobby");
-        VBox lobbyLayout = new VBox(10, new Label("Lobby Players:"), lobbyPlayersList, leaveLobbyButton);
+        Button startGameButton = new Button("Start Game");
+        VBox lobbyLayout = new VBox(10, new Label("Lobby Players:"), lobbyPlayersList, leaveLobbyButton, startGameButton);
         lobbyLayout.setAlignment(Pos.CENTER);
         Scene lobbyScene = new Scene(lobbyLayout, 300, 200);
+
+        // Game scene
+        BorderPane gameLayout = new BorderPane();
+        GridPane boardGrid = new GridPane();
+        currentPlayerLabel = new Label("Current Player: ");
+        diceRollLabel = new Label("Dice Roll: ");
+        rollDiceButton = new Button("Roll Dice");
+        endTurnButton = new Button("End Turn");
+        VBox gameInfo = new VBox(10, currentPlayerLabel, diceRollLabel, rollDiceButton, endTurnButton);
+        gameLayout.setCenter(boardGrid);
+        gameLayout.setRight(gameInfo);
+        gameScene = new Scene(gameLayout, 800, 600);
 
         // Handle button actions
         loginLayout.getLoginButton().setOnAction(e -> {
@@ -192,6 +216,7 @@ public class ClientMain extends Application {
                         Alert alert = new Alert(success ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR, serverResponse, ButtonType.OK);
                         alert.showAndWait();
                         if (success) {
+                            currentLobbyName = lobbyName;
                             primaryStage.setScene(lobbyScene);
                             startAutoRefreshLobbyPlayers(lobbyName);
                         }
@@ -227,6 +252,7 @@ public class ClientMain extends Application {
                                 Alert alert = new Alert(success ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR, serverResponse, ButtonType.OK);
                                 alert.showAndWait();
                                 if (success) {
+                                    currentLobbyName = lobbyName;
                                     primaryStage.setScene(lobbyScene);
                                     startAutoRefreshLobbyPlayers(lobbyName);
                                 }
@@ -247,6 +273,7 @@ public class ClientMain extends Application {
                 try {
                     dataOut.writeUTF("leaveLobby");
                     dataOut.writeInt(loggedUser.getId());
+                    currentLobbyName = null;
                     Platform.runLater(() -> primaryStage.setScene(mainMenuScene));
                 } catch (IOException ex) {
                     ex.printStackTrace();
@@ -263,10 +290,26 @@ public class ClientMain extends Application {
             }
         });
 
+        startGameButton.setOnAction(e -> {
+            currentPlayer = new Player(loggedUser);
+            System.out.println("Current player: " + currentPlayer.getUser().getNickname());
+            startGame(primaryStage);
+        });
+
+        // Roll dice button action
+        rollDiceButton.setOnAction(e -> {
+            currentPlayer.rollDice();
+        });
+
+        // End turn button action
+        endTurnButton.setOnAction(e -> {
+            currentPlayer.endTurn();
+        });
+
         Runtime.getRuntime().addShutdownHook(new Thread(Login::logoutUser));
 
         primaryStage.setScene(loginScene);
-        primaryStage.setTitle("Login");
+        primaryStage.setTitle("Monopoly Game");
         primaryStage.show();
     }
 
@@ -322,5 +365,37 @@ public class ClientMain extends Application {
         if (lobbyPlayersTimer != null) {
             lobbyPlayersTimer.cancel();
         }
+    }
+
+    private void startGame(Stage primaryStage) {
+        executorService.submit(() -> {
+            try {
+                String lobbyName = currentLobbyName;
+                System.out.println("Starting game in lobby: " + lobbyName);
+                dataOut.writeUTF("startGame");
+                dataOut.writeUTF(lobbyName);
+                dataOut.writeInt(loggedUser.getId());
+
+                String serverResponse = dataIn.readUTF();
+                System.out.println("Server response: " + serverResponse);
+                boolean success = dataIn.readBoolean();
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(success ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR, serverResponse, ButtonType.OK);
+                    alert.showAndWait();
+                    if (success) {
+                        System.out.println("Game started");
+                        try {
+                            currentGameID = dataIn.readInt();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                        // Transition to game scene
+                        primaryStage.setScene(gameScene);
+                    }
+                });
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        });
     }
 }

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class GameManager {
+    private static int gameID = 0;
     private ArrayList<Player> players = new ArrayList<>();
     private ArrayList<Board> boardSpaces = new ArrayList<>();
     private ArrayList<StreetSet> streetSets = new ArrayList<>();
@@ -15,6 +16,7 @@ public class GameManager {
     public GameManager(ArrayList<Player> players) {
         if (players.size() < 2 || players.size() > 4) throw new IllegalArgumentException("Invalid number of players");
         this.players = players;
+        gameID++;
     }
 
     public void nextTurn() {
@@ -321,5 +323,13 @@ public class GameManager {
     }
     public void startGame() {
         populateBoard();
+        // random player index from 1 to players.size() - 1
+        currentPlayerIndex = (int) (Math.random() * (players.size() - 1));
     }
+
+    public int getGameID() {
+        return gameID;
+    }
+
+
 }

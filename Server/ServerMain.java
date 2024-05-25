@@ -4,9 +4,11 @@ import Login.Login;
 import Login.Register;
 import Login.User;
 import Lobby.Lobby;
+import Utilities.Player;
 
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -59,6 +61,7 @@ public class ServerMain {
         commandMap.put("listLobbies", new ListLobbiesCommand());
         commandMap.put("getLobbyPlayers", new GetLobbyPlayersCommand());
         commandMap.put("leaveLobby", new LeaveLobbyCommand());
+        commandMap.put("startGame", new StartGameCommand());
     }
 
     interface Command {
@@ -232,6 +235,42 @@ public class ServerMain {
                 }
             } finally {
                 usersLock.readLock().unlock();
+            }
+        }
+    }
+
+    public static class StartGameCommand implements Command {
+        @Override
+        public void execute(DataInputStream dataIn, DataOutputStream dataOut) throws IOException {
+            String lobbyName = dataIn.readUTF();
+            System.out.println("TEST: " + lobbyName);
+            User player = users.getUserById(dataIn.readInt());
+            lobbiesLock.writeLock().lock();
+            try {
+                Lobby lobby = lobbies.get(lobbyName);
+                if (lobby == null) {
+                    dataOut.writeUTF("Lobby does not exist");
+                    dataOut.writeBoolean(false);
+                } else if (!lobby.getOwner().equals(player)) {
+                    dataOut.writeUTF("Only the lobby owner can start the game");
+                    dataOut.writeBoolean(false);
+                } else if (lobby.getPlayers().size() < 2) {
+                    dataOut.writeUTF("Not enough players to start the game");
+                    dataOut.writeBoolean(false);
+                } else {
+                    // Initialize game manager and start the game
+                    ArrayList<Player> players = new ArrayList<>();
+                    for (User user : lobby.getPlayers()) {
+                        players.add(new Player(user));
+                    }
+                    GameManager gameManager = new GameManager(players);
+                    gameManager.startGame();
+                    dataOut.writeUTF("Game started successfully");
+                    dataOut.writeBoolean(true);
+                    dataOut.writeInt(gameManager.getGameID());
+                }
+            } finally {
+                lobbiesLock.writeLock().unlock();
             }
         }
     }
