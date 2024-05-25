@@ -27,14 +27,25 @@ public class Lobby {
     }
 
     public boolean removePlayer(User player) {
-        return players.remove(player);
+        boolean removed = players.remove(player);
+        if (removed && player.equals(owner)) {
+            changeOwner();
+        }
+        return removed;
     }
 
-    public boolean isFull() {
-        return players.size() == maxPlayers;
+    private void changeOwner() {
+        if (players.isEmpty()) {
+            owner = null; // No owner if there are no players
+        } else {
+            owner = players.getFirst(); // Set the next player as the new owner
+        }
     }
 
-    // getters and setters
+    public boolean isEmpty() {
+        return players.isEmpty();
+    }
+
     public ArrayList<User> getPlayers() {
         return players;
     }

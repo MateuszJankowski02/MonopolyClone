@@ -40,4 +40,9 @@ public class LoginLayout extends VBox {
     public Button getRegisterButton() {
         return (Button) this.getChildren().get(3);
     }
+
+    public void clearFields() {
+        this.getUsernameField().clear();
+        this.getPasswordField().clear();
+    }
 }

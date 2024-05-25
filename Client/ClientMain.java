@@ -67,8 +67,9 @@ public class ClientMain extends Application {
         // Main menu scene
         Button createLobbyButton = new Button("Create lobby");
         Button listLobbiesButton = new Button("List lobbies");
+        Button logoutButton = new Button("Logout");
         Button exitButton = new Button("Exit");
-        VBox mainMenuLayout = new VBox(10, createLobbyButton, listLobbiesButton, exitButton);
+        VBox mainMenuLayout = new VBox(10, createLobbyButton, listLobbiesButton, logoutButton, exitButton);
         mainMenuLayout.setAlignment(Pos.CENTER);
         Scene mainMenuScene = new Scene(mainMenuLayout, 300, 200);
 
@@ -78,14 +79,16 @@ public class ClientMain extends Application {
         TextField maxPlayersField = new TextField();
         maxPlayersField.setPromptText("Enter max players");
         Button confirmCreateLobbyButton = new Button("Confirm");
-        VBox createLobbyLayout = new VBox(10, lobbyNameField, maxPlayersField, confirmCreateLobbyButton);
+        Button backToMainMenuFromCreateButton = new Button("Back to main menu");
+        VBox createLobbyLayout = new VBox(10, lobbyNameField, maxPlayersField, confirmCreateLobbyButton, backToMainMenuFromCreateButton);
         createLobbyLayout.setAlignment(Pos.CENTER);
         Scene createLobbyScene = new Scene(createLobbyLayout, 300, 200);
 
         // Combined list and join lobbies scene
         lobbiesList = new ListView<>();
         Button refreshLobbiesButton = new Button("Refresh");
-        VBox listLobbiesLayout = new VBox(10, lobbiesList, refreshLobbiesButton);
+        Button backToMainMenuFromListButton = new Button("Back to main menu");
+        VBox listLobbiesLayout = new VBox(10, lobbiesList, refreshLobbiesButton, backToMainMenuFromListButton);
         listLobbiesLayout.setAlignment(Pos.CENTER);
         Scene listLobbiesScene = new Scene(listLobbiesLayout, 300, 200);
 
@@ -126,6 +129,13 @@ public class ClientMain extends Application {
         listLobbiesButton.setOnAction(e -> {
             refreshLobbies();
             primaryStage.setScene(listLobbiesScene);
+        });
+
+        logoutButton.setOnAction(e -> {
+            Login.logoutUser();
+            loggedUser = null;
+            loginLayout.clearFields();
+            primaryStage.setScene(loginScene);
         });
 
         confirmRegisterButton.setOnAction(e -> {
@@ -195,6 +205,10 @@ public class ClientMain extends Application {
                 }
             });
         });
+
+        backToMainMenuFromCreateButton.setOnAction(e -> primaryStage.setScene(mainMenuScene));
+
+        backToMainMenuFromListButton.setOnAction(e -> primaryStage.setScene(mainMenuScene));
 
         lobbiesList.setOnMouseClicked(event -> {
             if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {

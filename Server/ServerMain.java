@@ -208,9 +208,15 @@ public class ServerMain {
                 if (user != null) {
                     lobbiesLock.writeLock().lock();
                     try {
-                        for (Lobby lobby : lobbies.values()) {
+                        for (String lobbyName : lobbies.keySet()) {
+                            Lobby lobby = lobbies.get(lobbyName);
                             if (lobby.removePlayer(user)) {
-                                dataOut.writeUTF("Left lobby successfully");
+                                if (lobby.isEmpty()) {
+                                    lobbies.remove(lobbyName);
+                                    dataOut.writeUTF("Left lobby and lobby deleted");
+                                } else {
+                                    dataOut.writeUTF("Left lobby successfully");
+                                }
                                 dataOut.writeBoolean(true);
                                 return;
                             }
