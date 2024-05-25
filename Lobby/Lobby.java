@@ -26,8 +26,8 @@ public class Lobby {
         }
     }
 
-    public void removePlayer(User player) {
-        players.remove(player);
+    public boolean removePlayer(User player) {
+        return players.remove(player);
     }
 
     public boolean isFull() {

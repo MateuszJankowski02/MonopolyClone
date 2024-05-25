@@ -18,6 +18,9 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import javafx.application.Platform;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import Login.User;
 import Server.ServerMain;
@@ -30,6 +33,7 @@ public class ClientMain extends Application {
     public ListView<String> lobbiesList;
     public ListView<String> lobbyPlayersList;
     private ExecutorService executorService;
+    private Timer lobbyPlayersTimer;
 
     public static void main(String[] args) {
         launch(args);
@@ -179,7 +183,7 @@ public class ClientMain extends Application {
                         alert.showAndWait();
                         if (success) {
                             primaryStage.setScene(lobbyScene);
-                            refreshLobbyPlayers(lobbyName);
+                            startAutoRefreshLobbyPlayers(lobbyName);
                         }
                     });
                 } catch (IOException | NumberFormatException ex) {
@@ -209,8 +213,8 @@ public class ClientMain extends Application {
                                 Alert alert = new Alert(success ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR, serverResponse, ButtonType.OK);
                                 alert.showAndWait();
                                 if (success) {
-                                    refreshLobbyPlayers(lobbyName);
                                     primaryStage.setScene(lobbyScene);
+                                    startAutoRefreshLobbyPlayers(lobbyName);
                                 }
                             });
                         } catch (IOException ex) {
@@ -223,7 +227,18 @@ public class ClientMain extends Application {
 
         refreshLobbiesButton.setOnAction(e -> refreshLobbies());
 
-        leaveLobbyButton.setOnAction(e -> primaryStage.setScene(mainMenuScene));
+        leaveLobbyButton.setOnAction(e -> {
+            stopAutoRefreshLobbyPlayers();
+            executorService.submit(() -> {
+                try {
+                    dataOut.writeUTF("leaveLobby");
+                    dataOut.writeInt(loggedUser.getId());
+                    Platform.runLater(() -> primaryStage.setScene(mainMenuScene));
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            });
+        });
 
         exitButton.setOnAction(e -> {
             try {
@@ -277,5 +292,21 @@ public class ClientMain extends Application {
                 ex.printStackTrace();
             }
         });
+    }
+
+    private void startAutoRefreshLobbyPlayers(String lobbyName) {
+        lobbyPlayersTimer = new Timer(true);
+        lobbyPlayersTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                refreshLobbyPlayers(lobbyName);
+            }
+        }, 0, 5000); // refresh every 5 seconds
+    }
+
+    private void stopAutoRefreshLobbyPlayers() {
+        if (lobbyPlayersTimer != null) {
+            lobbyPlayersTimer.cancel();
+        }
     }
 }

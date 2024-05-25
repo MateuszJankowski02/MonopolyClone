@@ -58,6 +58,7 @@ public class ServerMain {
         commandMap.put("joinLobby", new JoinLobbyCommand());
         commandMap.put("listLobbies", new ListLobbiesCommand());
         commandMap.put("getLobbyPlayers", new GetLobbyPlayersCommand());
+        commandMap.put("leaveLobby", new LeaveLobbyCommand());
     }
 
     interface Command {
@@ -193,6 +194,38 @@ public class ServerMain {
                 }
             } finally {
                 lobbiesLock.readLock().unlock();
+            }
+        }
+    }
+
+    static class LeaveLobbyCommand implements Command {
+        @Override
+        public void execute(DataInputStream dataIn, DataOutputStream dataOut) throws IOException {
+            int userId = dataIn.readInt();
+            usersLock.readLock().lock();
+            try {
+                User user = users.getUserById(userId);
+                if (user != null) {
+                    lobbiesLock.writeLock().lock();
+                    try {
+                        for (Lobby lobby : lobbies.values()) {
+                            if (lobby.removePlayer(user)) {
+                                dataOut.writeUTF("Left lobby successfully");
+                                dataOut.writeBoolean(true);
+                                return;
+                            }
+                        }
+                        dataOut.writeUTF("User not in any lobby");
+                        dataOut.writeBoolean(false);
+                    } finally {
+                        lobbiesLock.writeLock().unlock();
+                    }
+                } else {
+                    dataOut.writeUTF("User not found");
+                    dataOut.writeBoolean(false);
+                }
+            } finally {
+                usersLock.readLock().unlock();
             }
         }
     }
