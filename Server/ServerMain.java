@@ -5,6 +5,7 @@ import Login.Register;
 import Login.User;
 import Lobby.Lobby;
 import Utilities.Player;
+import javafx.stage.Stage;
 
 import java.io.*;
 import java.net.*;
@@ -246,6 +247,7 @@ public class ServerMain {
         public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
             String lobbyName = (String) objectIn.readObject();
             User player = users.getUserById((int) objectIn.readObject());
+
             lobbiesLock.writeLock().lock();
             try {
                 Lobby lobby = lobbies.get(lobbyName);
@@ -263,15 +265,15 @@ public class ServerMain {
                     for (User user : lobby.getPlayers()) {
                         players.add(new Player(user));
                     }
-                    GameManager gameManager = new GameManager(players);
-                    gameManager.startGame();
+                    GameManager gameManager = new GameManager(players);  // Assuming players is already initialized
 
                     // Set gameStarted flag to true
                     lobby.setGameStarted(true);
 
                     objectOut.writeObject("Game started successfully");
                     objectOut.writeObject(true);
-                    objectOut.writeInt(gameManager.getGameID());
+                    objectOut.writeObject(gameManager);
+                    objectOut.writeObject(players);
                 }
             } finally {
                 lobbiesLock.writeLock().unlock();

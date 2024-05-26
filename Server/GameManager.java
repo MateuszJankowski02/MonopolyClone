@@ -3,6 +3,8 @@ package Server;
 import BoardSpaces.*;
 import Utilities.Player;
 
+import java.io.IOException;
+import java.io.Serializable;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,12 +14,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.shape.Circle;
+import javafx.stage.Stage;
 
-public class GameManager implements Initializable {
+public class GameManager implements Serializable {
+    private static final long serialVersionUID = 1L;
     private static int gameID = 0;
     private ArrayList<Player> players;
     private ArrayList<Board> boardSpaces = new ArrayList<>();
@@ -75,7 +82,6 @@ public class GameManager implements Initializable {
         getCurrentPlayer().rollDice();
         int roll = getCurrentPlayer().getCurrentRoll();
         currentRollAmountLabel.setText(Integer.toString(roll));
-
     }
 
     @FXML
@@ -384,31 +390,6 @@ public class GameManager implements Initializable {
     }
     public void startGame() {
         populateBoard();
-        currentPlayerIndex = (int) (Math.random() * (players.size() - 1));
-        currentPlayerLabel.setText(players.get(currentPlayerIndex).getName());
-        if(players.size() == 2) {
-            playerOneLabel.setText(players.get(0).getName());
-            playerTwoLabel.setText(players.get(1).getName());
-            playerThreeLabel.setVisible(false);
-            playerFourLabel.setVisible(false);
-            playerThreePiece.setVisible(false);
-            playerFourPiece.setVisible(false);
-            playerThreePieceExample.setVisible(false);
-            playerFourPieceExample.setVisible(false);
-        }else if(players.size() == 3){
-            playerOneLabel.setText(players.get(0).getName());
-            playerTwoLabel.setText(players.get(1).getName());
-            playerThreeLabel.setText(players.get(2).getName());
-            playerFourLabel.setVisible(false);
-            playerFourPiece.setVisible(false);
-            playerFourPieceExample.setVisible(false);
-        }else{
-            playerOneLabel.setText(players.get(0).getName());
-            playerTwoLabel.setText(players.get(1).getName());
-            playerThreeLabel.setText(players.get(2).getName());
-            playerFourLabel.setText(players.get(3).getName());
-        }
-
 
     }
 
@@ -417,14 +398,42 @@ public class GameManager implements Initializable {
     }
 
 
-    @Override
-    public void initialize(URL url, ResourceBundle resourceBundle) {
-        currentPlayerLabel.setText("Player X");
-        currentRollAmountLabel.setText("0");
-        playerOneLabel.setText("Player 1");
-        playerTwoLabel.setText("Player 2");
-        playerThreeLabel.setText("Player 3");
-        playerFourLabel.setText("Player 4");
+    public void initializeGameUI(Stage primaryStage) throws IOException {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/monopoly.fxml"));
+        loader.setController(this);  // Ensure the current instance is used as the controller
+        Parent root = loader.load();
 
+        Scene scene = new Scene(root);
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("Game Manager");
+        primaryStage.show();
+    }
+
+    @FXML
+    private void initialize() {
+        // This method is called by the FXMLLoader when initialization is complete
+        System.out.println("GameManager controller initialized");
+        if(players.size() == 2) {
+            playerOneLabel.setText(players.get(0).getName());
+            playerTwoLabel.setText(players.get(1).getName());
+            playerThreeLabel.setVisible(false);
+            playerFourLabel.setVisible(false);
+            playerThreePiece.setVisible(false);
+            playerThreePieceExample.setVisible(false);
+            playerFourPiece.setVisible(false);
+            playerFourPieceExample.setVisible(false);
+        } else if(players.size() == 3) {
+            playerOneLabel.setText(players.get(0).getName());
+            playerTwoLabel.setText(players.get(1).getName());
+            playerThreeLabel.setText(players.get(2).getName());
+            playerFourLabel.setVisible(false);
+            playerFourPiece.setVisible(false);
+            playerFourPieceExample.setVisible(false);
+        } else {
+            playerOneLabel.setText(players.get(0).getName());
+            playerTwoLabel.setText(players.get(1).getName());
+            playerThreeLabel.setText(players.get(2).getName());
+            playerFourLabel.setText(players.get(3).getName());
+        }
     }
 }

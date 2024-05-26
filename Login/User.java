@@ -3,9 +3,11 @@ package Login;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class User {
+public class User implements Serializable {
+    private static final long serialVersionUID = 3L;
     private static int idCounter = 0;
     private int id;
     private String nickname;

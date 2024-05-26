@@ -111,12 +111,6 @@ public class ClientMain extends Application {
         lobbyLayout.setAlignment(Pos.CENTER);
         Scene lobbyScene = new Scene(lobbyLayout, 300, 200);
 
-        // Game scene
-        FXMLLoader gameLoader = new FXMLLoader(getClass().getResource("/monopoly.fxml"));
-        AnchorPane gameLayout = gameLoader.load();
-        GameManager gameManager = gameLoader.getController();
-        gameScene = new Scene(gameLayout);
-
         // Handle button actions
         loginLayout.getLoginButton().setOnAction(e -> {
             executorService.submit(() -> {
@@ -389,6 +383,7 @@ public class ClientMain extends Application {
                 objectOut.writeObject(lobbyName);
                 objectOut.writeObject(loggedUser.getId());
 
+
                 String serverResponse = (String) objectIn.readObject();
                 System.out.println("Server response: " + serverResponse);
                 boolean success = (boolean) objectIn.readObject();
@@ -398,13 +393,15 @@ public class ClientMain extends Application {
                     if (success) {
                         System.out.println("Game started");
                         try {
-                            currentGameID = (int) objectIn.readObject();
+                            // Game scene
+                            GameManager gameManager = (GameManager) objectIn.readObject();
+                            gameManager.initializeGameUI(primaryStage);
                         } catch (ClassNotFoundException | IOException e) {
                             e.printStackTrace();
                         }
                         // Transition to game scene
 
-                        primaryStage.setScene(gameScene);
+                        //primaryStage.setScene(gameScene);
                     }
                 });
             } catch (IOException | ClassNotFoundException ex) {
