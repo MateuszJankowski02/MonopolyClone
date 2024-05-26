@@ -3,15 +3,62 @@ package Server;
 import BoardSpaces.*;
 import Utilities.Player;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.ResourceBundle;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
-public class GameManager {
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.shape.Circle;
+
+public class GameManager implements Initializable {
     private static int gameID = 0;
-    private ArrayList<Player> players = new ArrayList<>();
+    private ArrayList<Player> players;
     private ArrayList<Board> boardSpaces = new ArrayList<>();
     private ArrayList<StreetSet> streetSets = new ArrayList<>();
     private int currentPlayerIndex = 0;
+
+    @FXML
+    private Button rollDiceButton;
+    @FXML
+    private Button endTurnButton;
+    @FXML
+    private Label currentPlayerLabel;
+    @FXML
+    private Label currentRollAmountLabel;
+    @FXML
+    private Label playerOneLabel;
+    @FXML
+    private Label playerTwoLabel;
+    @FXML
+    private Label playerThreeLabel;
+    @FXML
+    private Label playerFourLabel;
+    @FXML
+    private Circle playerOnePieceExample;
+    @FXML
+    private Circle playerTwoPieceExample;
+    @FXML
+    private Circle playerThreePieceExample;
+    @FXML
+    private Circle playerFourPieceExample;
+    @FXML
+    private Circle playerOnePiece;
+    @FXML
+    private Circle playerTwoPiece;
+    @FXML
+    private Circle playerThreePiece;
+    @FXML
+    private Circle playerFourPiece;
+
+    public GameManager() {
+    }
 
     public GameManager(ArrayList<Player> players) {
         if (players.size() < 2 || players.size() > 4) throw new IllegalArgumentException("Invalid number of players");
@@ -21,6 +68,20 @@ public class GameManager {
 
     public void nextTurn() {
         currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+    }
+
+    @FXML
+    private void rollDiceButtonOnAction(){
+        getCurrentPlayer().rollDice();
+        int roll = getCurrentPlayer().getCurrentRoll();
+        currentRollAmountLabel.setText(Integer.toString(roll));
+
+    }
+
+    @FXML
+    private void endTurnButtonOnAction(){
+        nextTurn();
+        currentPlayerLabel.setText(players.get(currentPlayerIndex+1).getName());
     }
 
     public Player getCurrentPlayer() {
@@ -323,8 +384,32 @@ public class GameManager {
     }
     public void startGame() {
         populateBoard();
-        // random player index from 1 to players.size() - 1
         currentPlayerIndex = (int) (Math.random() * (players.size() - 1));
+        currentPlayerLabel.setText(players.get(currentPlayerIndex).getName());
+        if(players.size() == 2) {
+            playerOneLabel.setText(players.get(0).getName());
+            playerTwoLabel.setText(players.get(1).getName());
+            playerThreeLabel.setVisible(false);
+            playerFourLabel.setVisible(false);
+            playerThreePiece.setVisible(false);
+            playerFourPiece.setVisible(false);
+            playerThreePieceExample.setVisible(false);
+            playerFourPieceExample.setVisible(false);
+        }else if(players.size() == 3){
+            playerOneLabel.setText(players.get(0).getName());
+            playerTwoLabel.setText(players.get(1).getName());
+            playerThreeLabel.setText(players.get(2).getName());
+            playerFourLabel.setVisible(false);
+            playerFourPiece.setVisible(false);
+            playerFourPieceExample.setVisible(false);
+        }else{
+            playerOneLabel.setText(players.get(0).getName());
+            playerTwoLabel.setText(players.get(1).getName());
+            playerThreeLabel.setText(players.get(2).getName());
+            playerFourLabel.setText(players.get(3).getName());
+        }
+
+
     }
 
     public int getGameID() {
@@ -332,4 +417,14 @@ public class GameManager {
     }
 
 
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle) {
+        currentPlayerLabel.setText("Player X");
+        currentRollAmountLabel.setText("0");
+        playerOneLabel.setText("Player 1");
+        playerTwoLabel.setText("Player 2");
+        playerThreeLabel.setText("Player 3");
+        playerFourLabel.setText("Player 4");
+
+    }
 }

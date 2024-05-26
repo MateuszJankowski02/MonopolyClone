@@ -67,7 +67,33 @@ public class Player {
         } else {
             canRoll = false;
         }
-        moveAmountRolled(currentRoll);
+
+        if (doublesRolled == 3) {
+            goToJail();
+        } else {
+            moveAmountRolled(currentRoll);
+        }
+
+        if(inJail && die1 == die2){
+            inJail = false;
+            turnsInJail = 0;
+        }
+        if (!inJail) {
+            moveAmountRolled(currentRoll);
+        }else{
+            turnsInJail++;
+            if(turnsInJail == 3){
+                addMoney(-50);
+                inJail = false;
+                turnsInJail = 0;
+            }
+        }
+    }
+
+    private void goToJail() {
+        inJail = true;
+        currentSpace = 10;
+        doublesRolled = 0;
     }
 
     private void moveAmountRolled(int diceRoll) {
@@ -87,6 +113,50 @@ public class Player {
 
     public User getUser() {
         return user;
+    }
+
+    public String getName(){
+        return user.getName();
+    }
+
+    public int getMoney() {
+        return money;
+    }
+
+    public int getCurrentSpace() {
+        return currentSpace;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public boolean isInJail() {
+        return inJail;
+    }
+
+    public int getTurnsInJail() {
+        return turnsInJail;
+    }
+
+    public int getJailCards() {
+        return jailCards;
+    }
+
+    public boolean isBankrupt() {
+        return bankrupt;
+    }
+
+    public boolean canRoll() {
+        return canRoll;
+    }
+
+    public int getDoublesRolled() {
+        return doublesRolled;
+    }
+
+    public int getCurrentRoll() {
+        return currentRoll;
     }
 
 

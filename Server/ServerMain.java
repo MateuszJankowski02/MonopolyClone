@@ -35,19 +35,19 @@ public class ServerMain {
     }
 
     private static void handleClient(Socket socket) {
-        try (DataInputStream dataIn = new DataInputStream(socket.getInputStream());
-             DataOutputStream dataOut = new DataOutputStream(socket.getOutputStream())) {
+        try (ObjectInputStream objectIn = new ObjectInputStream(socket.getInputStream());
+             ObjectOutputStream objectOut = new ObjectOutputStream(socket.getOutputStream())) {
 
             while (true) {
-                String commandKey = dataIn.readUTF();
+                String commandKey = (String) objectIn.readObject();
                 Command command = commandMap.get(commandKey);
                 if (command != null) {
-                    command.execute(dataIn, dataOut);
+                    command.execute(objectIn, objectOut);
                 } else {
-                    dataOut.writeUTF("Unknown command");
+                    objectOut.writeObject("Unknown command");
                 }
             }
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             System.err.println("Client handler exception: " + e.getMessage());
             e.printStackTrace();
         }
@@ -66,24 +66,24 @@ public class ServerMain {
     }
 
     interface Command {
-        void execute(DataInputStream dataIn, DataOutputStream dataOut) throws IOException;
+        void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException;
     }
 
     static class LoginCommand implements Command {
         @Override
-        public void execute(DataInputStream dataIn, DataOutputStream dataOut) throws IOException {
-            String username = dataIn.readUTF();
-            String password = dataIn.readUTF();
+        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
+            String username = (String) objectIn.readObject();
+            String password = (String) objectIn.readObject();
             System.out.println("User " + username + " is trying to log in with password " + password);
 
             usersLock.readLock().lock();
             try {
                 if (Login.loginUser(username, password) != null) {
                     System.out.println("User " + username + " logged in successfully");
-                    dataOut.writeBoolean(true);
+                    objectOut.writeObject(true);
                 } else {
                     System.out.println("User " + username + " failed to log in");
-                    dataOut.writeBoolean(false);
+                    objectOut.writeObject(false);
                 }
             } finally {
                 usersLock.readLock().unlock();
@@ -93,19 +93,19 @@ public class ServerMain {
 
     static class RegisterCommand implements Command {
         @Override
-        public void execute(DataInputStream dataIn, DataOutputStream dataOut) throws IOException {
-            String nicknameInput = dataIn.readUTF();
-            String loginInput = dataIn.readUTF();
-            String passwordInput = dataIn.readUTF();
+        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
+            String nicknameInput = (String) objectIn.readObject();
+            String loginInput = (String) objectIn.readObject();
+            String passwordInput = (String) objectIn.readObject();
             Register register = new Register();
 
             usersLock.writeLock().lock();
             try {
                 if (register.checkLogin(loginInput)) {
-                    dataOut.writeUTF("Login already exists");
+                    objectOut.writeObject("Login already exists");
                 } else {
                     register.registerUser(nicknameInput, loginInput, passwordInput);
-                    dataOut.writeUTF("Registration successful");
+                    objectOut.writeObject("Registration successful");
                     users.refresh();
                 }
             } finally {
@@ -116,21 +116,22 @@ public class ServerMain {
 
     static class CreateLobbyCommand implements Command {
         @Override
-        public void execute(DataInputStream dataIn, DataOutputStream dataOut) throws IOException {
-            String lobbyNameCreate = dataIn.readUTF();
-            int maxPlayers = dataIn.readInt();
+        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
+            String lobbyNameCreate = (String) objectIn.readObject();
+            System.out.println("lobbyNameCreate: " + lobbyNameCreate);
+            int maxPlayers = (int) objectIn.readObject();
             if (maxPlayers < 2 || maxPlayers > 4) {
-                dataOut.writeUTF("Invalid number of players");
-                dataOut.writeBoolean(false);
+                objectOut.writeObject("Invalid number of players");
+                objectOut.writeObject(false);
                 return;
             }
-            User owner = users.getUserById(dataIn.readInt());
+            User owner = users.getUserById((int) objectIn.readObject());
             lobbiesLock.writeLock().lock();
             try {
                 Lobby lobbyCreate = new Lobby(owner, lobbyNameCreate, maxPlayers);
                 lobbies.put(lobbyNameCreate, lobbyCreate);
-                dataOut.writeUTF("Lobby created successfully");
-                dataOut.writeBoolean(true);
+                objectOut.writeObject("Lobby created successfully");
+                objectOut.writeObject(true);
             } finally {
                 lobbiesLock.writeLock().unlock();
             }
@@ -139,22 +140,22 @@ public class ServerMain {
 
     static class JoinLobbyCommand implements Command {
         @Override
-        public void execute(DataInputStream dataIn, DataOutputStream dataOut) throws IOException {
-            String lobbyNameJoin = dataIn.readUTF();
-            User player = users.getUserById(dataIn.readInt());
+        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
+            String lobbyNameJoin = (String) objectIn.readObject();
+            User player = users.getUserById((int) objectIn.readObject());
             lobbiesLock.writeLock().lock();
             try {
                 Lobby lobbyJoin = lobbies.get(lobbyNameJoin);
                 if (lobbyJoin == null) {
-                    dataOut.writeUTF("Lobby does not exist");
-                    dataOut.writeBoolean(false);
+                    objectOut.writeObject("Lobby does not exist");
+                    objectOut.writeObject(false);
                 } else if (lobbyJoin.getPlayers().size() < lobbyJoin.getMaxPlayers()) {
                     lobbyJoin.addPlayer(player);
-                    dataOut.writeUTF("Joined lobby");
-                    dataOut.writeBoolean(true);
+                    objectOut.writeObject("Joined lobby");
+                    objectOut.writeObject(true);
                 } else {
-                    dataOut.writeUTF("Lobby is full");
-                    dataOut.writeBoolean(false);
+                    objectOut.writeObject("Lobby is full");
+                    objectOut.writeObject(false);
                 }
             } finally {
                 lobbiesLock.writeLock().unlock();
@@ -164,16 +165,16 @@ public class ServerMain {
 
     static class ListLobbiesCommand implements Command {
         @Override
-        public void execute(DataInputStream dataIn, DataOutputStream dataOut) throws IOException {
+        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException {
             lobbiesLock.readLock().lock();
             try {
-                dataOut.writeInt(lobbies.size());
+                objectOut.writeObject(lobbies.size());
                 for (String lobbyName : lobbies.keySet()) {
                     Lobby lobby = lobbies.get(lobbyName);
-                    dataOut.writeUTF(lobby.getLobbyName());
-                    dataOut.writeUTF(String.valueOf(lobby.getPlayers().size()));
-                    dataOut.writeUTF(String.valueOf(lobby.getMaxPlayers()));
-                    dataOut.writeUTF(lobby.getOwner().getNickname());
+                    objectOut.writeObject(lobby.getLobbyName());
+                    objectOut.writeObject(String.valueOf(lobby.getPlayers().size()));
+                    objectOut.writeObject(String.valueOf(lobby.getMaxPlayers()));
+                    objectOut.writeObject(lobby.getOwner().getNickname());
                 }
             } finally {
                 lobbiesLock.readLock().unlock();
@@ -183,18 +184,18 @@ public class ServerMain {
 
     static class GetLobbyPlayersCommand implements Command {
         @Override
-        public void execute(DataInputStream dataIn, DataOutputStream dataOut) throws IOException {
-            String lobbyName = dataIn.readUTF();
+        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
+            String lobbyName = (String) objectIn.readObject();
             lobbiesLock.readLock().lock();
             try {
                 Lobby lobby = lobbies.get(lobbyName);
                 if (lobby != null) {
-                    dataOut.writeInt(lobby.getPlayers().size());
+                    objectOut.writeObject(lobby.getPlayers().size());
                     for (User player : lobby.getPlayers()) {
-                        dataOut.writeUTF(player.getNickname());
+                        objectOut.writeObject(player.getNickname());
                     }
                 } else {
-                    dataOut.writeInt(0);
+                    objectOut.writeObject(0);
                 }
             } finally {
                 lobbiesLock.readLock().unlock();
@@ -204,8 +205,8 @@ public class ServerMain {
 
     static class LeaveLobbyCommand implements Command {
         @Override
-        public void execute(DataInputStream dataIn, DataOutputStream dataOut) throws IOException {
-            int userId = dataIn.readInt();
+        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
+            int userId = (int) objectIn.readObject();
             usersLock.readLock().lock();
             try {
                 User user = users.getUserById(userId);
@@ -217,22 +218,22 @@ public class ServerMain {
                             if (lobby.removePlayer(user)) {
                                 if (lobby.isEmpty()) {
                                     lobbies.remove(lobbyName);
-                                    dataOut.writeUTF("Left lobby and lobby deleted");
+                                    objectOut.writeObject("Left lobby and lobby deleted");
                                 } else {
-                                    dataOut.writeUTF("Left lobby successfully");
+                                    objectOut.writeObject("Left lobby successfully");
                                 }
-                                dataOut.writeBoolean(true);
+                                objectOut.writeObject(true);
                                 return;
                             }
                         }
-                        dataOut.writeUTF("User not in any lobby");
-                        dataOut.writeBoolean(false);
+                        objectOut.writeObject("User not in any lobby");
+                        objectOut.writeObject(false);
                     } finally {
                         lobbiesLock.writeLock().unlock();
                     }
                 } else {
-                    dataOut.writeUTF("User not found");
-                    dataOut.writeBoolean(false);
+                    objectOut.writeObject("User not found");
+                    objectOut.writeObject(false);
                 }
             } finally {
                 usersLock.readLock().unlock();
@@ -242,21 +243,21 @@ public class ServerMain {
 
     public static class StartGameCommand implements Command {
         @Override
-        public void execute(DataInputStream dataIn, DataOutputStream dataOut) throws IOException {
-            String lobbyName = dataIn.readUTF();
-            User player = users.getUserById(dataIn.readInt());
+        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
+            String lobbyName = (String) objectIn.readObject();
+            User player = users.getUserById((int) objectIn.readObject());
             lobbiesLock.writeLock().lock();
             try {
                 Lobby lobby = lobbies.get(lobbyName);
                 if (lobby == null) {
-                    dataOut.writeUTF("Lobby does not exist");
-                    dataOut.writeBoolean(false);
+                    objectOut.writeObject("Lobby does not exist");
+                    objectOut.writeObject(false);
                 } else if (!lobby.getOwner().equals(player)) {
-                    dataOut.writeUTF("Only the lobby owner can start the game");
-                    dataOut.writeBoolean(false);
+                    objectOut.writeObject("Only the lobby owner can start the game");
+                    objectOut.writeObject(false);
                 } else if (lobby.getPlayers().size() < 2) {
-                    dataOut.writeUTF("Not enough players to start the game");
-                    dataOut.writeBoolean(false);
+                    objectOut.writeObject("Not enough players to start the game");
+                    objectOut.writeObject(false);
                 } else {
                     ArrayList<Player> players = new ArrayList<>();
                     for (User user : lobby.getPlayers()) {
@@ -268,9 +269,9 @@ public class ServerMain {
                     // Set gameStarted flag to true
                     lobby.setGameStarted(true);
 
-                    dataOut.writeUTF("Game started successfully");
-                    dataOut.writeBoolean(true);
-                    dataOut.writeInt(gameManager.getGameID());
+                    objectOut.writeObject("Game started successfully");
+                    objectOut.writeObject(true);
+                    objectOut.writeInt(gameManager.getGameID());
                 }
             } finally {
                 lobbiesLock.writeLock().unlock();
@@ -280,15 +281,15 @@ public class ServerMain {
 
     public static class CheckGameStateCommand implements Command {
         @Override
-        public void execute(DataInputStream dataIn, DataOutputStream dataOut) throws IOException {
-            String lobbyName = dataIn.readUTF();
+        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
+            String lobbyName = (String) objectIn.readObject();
             lobbiesLock.readLock().lock();
             try {
                 Lobby lobby = lobbies.get(lobbyName);
                 if (lobby != null) {
-                    dataOut.writeBoolean(lobby.isGameStarted());
+                    objectOut.writeObject(lobby.isGameStarted());
                 } else {
-                    dataOut.writeBoolean(false);
+                    objectOut.writeObject(false);
                 }
             } finally {
                 lobbiesLock.readLock().unlock();

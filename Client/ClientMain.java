@@ -2,6 +2,7 @@
 package Client;
 
 import Login.Login;
+import Server.GameManager;
 import Utilities.Player;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -15,11 +16,8 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import javafx.scene.layout.BorderPane;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,8 +29,8 @@ import Server.ServerMain;
 
 public class ClientMain extends Application {
     private static Socket socket;
-    private static DataInputStream dataIn;
-    private static DataOutputStream dataOut;
+    private static ObjectInputStream objectIn;
+    private static ObjectOutputStream objectOut;
     public static User loggedUser = null;
     public ListView<String> lobbiesList;
     public ListView<String> lobbyPlayersList;
@@ -40,10 +38,6 @@ public class ClientMain extends Application {
     private Timer lobbyPlayersTimer;
     private Timer gameStatusTimer;
     private Scene gameScene;
-    private Label currentPlayerLabel;
-    private Label diceRollLabel;
-    private Button rollDiceButton;
-    private Button endTurnButton;
     private Player currentPlayer = null;
     private String currentLobbyName = null;
     private int currentGameID;
@@ -55,8 +49,12 @@ public class ClientMain extends Application {
     @Override
     public void start(Stage primaryStage) throws IOException {
         socket = new Socket("localhost", 8080);
-        dataIn = new DataInputStream(socket.getInputStream());
-        dataOut = new DataOutputStream(socket.getOutputStream());
+        try {
+            objectOut = new ObjectOutputStream(socket.getOutputStream());
+            objectIn = new ObjectInputStream(socket.getInputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         executorService = Executors.newCachedThreadPool();
 
         // Login scene
@@ -116,16 +114,17 @@ public class ClientMain extends Application {
         // Game scene
         FXMLLoader gameLoader = new FXMLLoader(getClass().getResource("/monopoly.fxml"));
         AnchorPane gameLayout = gameLoader.load();
+        GameManager gameManager = gameLoader.getController();
         gameScene = new Scene(gameLayout);
 
         // Handle button actions
         loginLayout.getLoginButton().setOnAction(e -> {
             executorService.submit(() -> {
                 try {
-                    dataOut.writeUTF("login");
-                    dataOut.writeUTF(loginLayout.getUsernameField().getText());
-                    dataOut.writeUTF(loginLayout.getPasswordField().getText());
-                    boolean loginSuccess = dataIn.readBoolean();
+                    objectOut.writeObject("login");
+                    objectOut.writeObject(loginLayout.getUsernameField().getText());
+                    objectOut.writeObject(loginLayout.getPasswordField().getText());
+                    boolean loginSuccess = (boolean) objectIn.readObject();
                     Platform.runLater(() -> {
                         if (loginSuccess) {
                             loggedUser = ServerMain.users.getUserByLogin(loginLayout.getUsernameField().getText());
@@ -135,7 +134,7 @@ public class ClientMain extends Application {
                             alert.showAndWait();
                         }
                     });
-                } catch (IOException ex) {
+                } catch (IOException | ClassNotFoundException ex) {
                     ex.printStackTrace();
                 }
             });
@@ -178,17 +177,17 @@ public class ClientMain extends Application {
                         });
                         return;
                     }
-                    dataOut.writeUTF("register");
-                    dataOut.writeUTF(nickname);
-                    dataOut.writeUTF(username);
-                    dataOut.writeUTF(password);
-                    String response = dataIn.readUTF();
+                    objectOut.writeObject("register");
+                    objectOut.writeObject(nickname);
+                    objectOut.writeObject(username);
+                    objectOut.writeObject(password);
+                    String response = (String) objectIn.readObject();
                     Platform.runLater(() -> {
                         Alert alert = new Alert(Alert.AlertType.INFORMATION, response, ButtonType.OK);
                         alert.showAndWait();
                         primaryStage.setScene(loginScene);
                     });
-                } catch (IOException ex) {
+                } catch (IOException | ClassNotFoundException ex) {
                     ex.printStackTrace();
                 }
             });
@@ -199,14 +198,12 @@ public class ClientMain extends Application {
                 try {
                     String lobbyName = lobbyNameField.getText();
                     int maxPlayers = Integer.parseInt(maxPlayersField.getText());
-
-                    dataOut.writeUTF("createLobby");
-                    dataOut.writeUTF(lobbyName);
-                    dataOut.writeInt(maxPlayers);
-                    dataOut.writeInt(loggedUser.getId());
-
-                    String serverResponse = dataIn.readUTF();
-                    boolean success = dataIn.readBoolean();
+                    objectOut.writeObject("createLobby");
+                    objectOut.writeObject(lobbyName);
+                    objectOut.writeObject(maxPlayers);
+                    objectOut.writeObject(loggedUser.getId());
+                    String serverResponse = (String) objectIn.readObject();
+                    boolean success = (boolean) objectIn.readObject();
                     Platform.runLater(() -> {
                         Alert alert = new Alert(success ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR, serverResponse, ButtonType.OK);
                         alert.showAndWait();
@@ -216,11 +213,7 @@ public class ClientMain extends Application {
                             startAutoRefreshLobbyPlayers(lobbyName);
                         }
                     });
-                } catch (IOException | NumberFormatException ex) {
-                    Platform.runLater(() -> {
-                        Alert alert = new Alert(Alert.AlertType.ERROR, "Error creating lobby", ButtonType.OK);
-                        alert.showAndWait();
-                    });
+                } catch (IOException | ClassNotFoundException ex) {
                     ex.printStackTrace();
                 }
             });
@@ -237,12 +230,12 @@ public class ClientMain extends Application {
                     executorService.submit(() -> {
                         try {
                             String lobbyName = selectedLobby.split(":")[1].split(",")[0].trim();
-                            dataOut.writeUTF("joinLobby");
-                            dataOut.writeUTF(lobbyName);
-                            dataOut.writeInt(loggedUser.getId());
+                            objectOut.writeObject("joinLobby");
+                            objectOut.writeObject(lobbyName);
+                            objectOut.writeObject(loggedUser.getId());
 
-                            String serverResponse = dataIn.readUTF();
-                            boolean success = dataIn.readBoolean();
+                            String serverResponse = (String) objectIn.readObject();
+                            boolean success = (boolean) objectIn.readObject();
                             Platform.runLater(() -> {
                                 Alert alert = new Alert(success ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR, serverResponse, ButtonType.OK);
                                 alert.showAndWait();
@@ -253,7 +246,7 @@ public class ClientMain extends Application {
                                     startAutoRefreshGameStatus(primaryStage);
                                 }
                             });
-                        } catch (IOException ex) {
+                        } catch (IOException | ClassNotFoundException ex) {
                             ex.printStackTrace();
                         }
                     });
@@ -268,8 +261,8 @@ public class ClientMain extends Application {
             stopAutoRefreshGameStatus();
             executorService.submit(() -> {
                 try {
-                    dataOut.writeUTF("leaveLobby");
-                    dataOut.writeInt(loggedUser.getId());
+                    objectOut.writeObject("leaveLobby");
+                    objectOut.writeObject(loggedUser.getId());
                     currentLobbyName = null;
                     Platform.runLater(() -> primaryStage.setScene(mainMenuScene));
                 } catch (IOException ex) {
@@ -303,18 +296,18 @@ public class ClientMain extends Application {
     private void refreshLobbies() {
         executorService.submit(() -> {
             try {
-                dataOut.writeUTF("listLobbies");
-                int lobbiesSize = dataIn.readInt();
+                objectOut.writeObject("listLobbies");
+                int lobbiesSize = (int) objectIn.readObject();
                 ObservableList<String> lobbies = FXCollections.observableArrayList();
                 for (int i = 0; i < lobbiesSize; i++) {
-                    String lobbyName = dataIn.readUTF();
-                    String players = dataIn.readUTF();
-                    String maxPlayers = dataIn.readUTF();
-                    String owner = dataIn.readUTF();
+                    String lobbyName = (String) objectIn.readObject();
+                    String players = (String) objectIn.readObject();
+                    String maxPlayers = (String) objectIn.readObject();
+                    String owner = (String) objectIn.readObject();
                     lobbies.add(String.format("Lobby: %s, Players: %s/%s, Owner: %s", lobbyName, players, maxPlayers, owner));
                 }
                 Platform.runLater(() -> lobbiesList.setItems(lobbies));
-            } catch (IOException ex) {
+            } catch (IOException | ClassNotFoundException ex) {
                 ex.printStackTrace();
             }
         });
@@ -323,16 +316,16 @@ public class ClientMain extends Application {
     private void refreshLobbyPlayers(String lobbyName) {
         executorService.submit(() -> {
             try {
-                dataOut.writeUTF("getLobbyPlayers");
-                dataOut.writeUTF(lobbyName);
-                int playersSize = dataIn.readInt();
+                objectOut.writeObject("getLobbyPlayers");
+                objectOut.writeObject(lobbyName);
+                int playersSize = (int) objectIn.readObject();
                 ObservableList<String> players = FXCollections.observableArrayList();
                 for (int i = 0; i < playersSize; i++) {
-                    String playerName = dataIn.readUTF();
+                    String playerName = (String) objectIn.readObject();
                     players.add(playerName);
                 }
                 Platform.runLater(() -> lobbyPlayersList.setItems(players));
-            } catch (IOException ex) {
+            } catch (IOException | ClassNotFoundException ex) {
                 ex.printStackTrace();
             }
         });
@@ -345,7 +338,7 @@ public class ClientMain extends Application {
             public void run() {
                 refreshLobbyPlayers(lobbyName);
             }
-        }, 0, 5000); // refresh every 5 seconds
+        }, 0, 3000); // refresh every 3 seconds
     }
 
     private void stopAutoRefreshLobbyPlayers() {
@@ -363,7 +356,7 @@ public class ClientMain extends Application {
                     checkIfGameStarted(primaryStage);
                 }
             }
-        }, 0, 3000); // Check every 3 seconds
+        }, 0, 2000); // Check every 2 seconds
     }
 
     private void stopAutoRefreshGameStatus() {
@@ -375,13 +368,13 @@ public class ClientMain extends Application {
     private void checkIfGameStarted(Stage primaryStage) {
         executorService.submit(() -> {
             try {
-                dataOut.writeUTF("checkGameState");
-                dataOut.writeUTF(currentLobbyName);
-                boolean gameStarted = dataIn.readBoolean();
+                objectOut.writeObject("checkGameState");
+                objectOut.writeObject(currentLobbyName);
+                boolean gameStarted = (boolean) objectIn.readObject();
                 if (gameStarted) {
                     Platform.runLater(() -> primaryStage.setScene(gameScene));
                 }
-            } catch (IOException ex) {
+            } catch (IOException | ClassNotFoundException ex) {
                 ex.printStackTrace();
             }
         });
@@ -392,28 +385,29 @@ public class ClientMain extends Application {
             try {
                 String lobbyName = currentLobbyName;
                 System.out.println("Starting game in lobby: " + lobbyName);
-                dataOut.writeUTF("startGame");
-                dataOut.writeUTF(lobbyName);
-                dataOut.writeInt(loggedUser.getId());
+                objectOut.writeObject("startGame");
+                objectOut.writeObject(lobbyName);
+                objectOut.writeObject(loggedUser.getId());
 
-                String serverResponse = dataIn.readUTF();
+                String serverResponse = (String) objectIn.readObject();
                 System.out.println("Server response: " + serverResponse);
-                boolean success = dataIn.readBoolean();
+                boolean success = (boolean) objectIn.readObject();
                 Platform.runLater(() -> {
                     Alert alert = new Alert(success ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR, serverResponse, ButtonType.OK);
                     alert.showAndWait();
                     if (success) {
                         System.out.println("Game started");
                         try {
-                            currentGameID = dataIn.readInt();
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
+                            currentGameID = (int) objectIn.readObject();
+                        } catch (ClassNotFoundException | IOException e) {
+                            e.printStackTrace();
                         }
                         // Transition to game scene
+
                         primaryStage.setScene(gameScene);
                     }
                 });
-            } catch (IOException ex) {
+            } catch (IOException | ClassNotFoundException ex) {
                 ex.printStackTrace();
             }
         });
