@@ -1,6 +1,8 @@
 package Lobby;
 
 import Login.User;
+import Server.GameManager;
+
 import java.util.ArrayList;
 
 public class Lobby {
@@ -8,6 +10,7 @@ public class Lobby {
     private User owner;
     private String lobbyName;
     private int maxPlayers;
+    private GameManager gameManager;
     private boolean gameStarted;
 
     public Lobby(User owner, String lobbyName, int maxPlayers) {
@@ -70,5 +73,12 @@ public class Lobby {
 
     public void setGameStarted(boolean gameStarted) {
         this.gameStarted = gameStarted;
+    }
+    public void setGameManager(GameManager gameManager) {
+        this.gameManager = gameManager;
+    }
+
+    public GameManager getGameManager() {
+        return gameManager;
     }
 }

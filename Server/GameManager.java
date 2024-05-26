@@ -1,6 +1,7 @@
 package Server;
 
 import BoardSpaces.*;
+import Client.ClientMain;
 import Utilities.Player;
 
 import java.io.IOException;
@@ -24,6 +25,8 @@ import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 
 public class GameManager implements Serializable {
+
+    private static GameManager instance;
     private static final long serialVersionUID = 1L;
     private static int gameID = 0;
     private ArrayList<Player> players;
@@ -64,7 +67,7 @@ public class GameManager implements Serializable {
     @FXML
     private Circle playerFourPiece;
 
-    public GameManager() {
+    private GameManager() {
     }
 
     public GameManager(ArrayList<Player> players) {
@@ -73,8 +76,17 @@ public class GameManager implements Serializable {
         gameID++;
     }
 
+    public static GameManager getInstance() {
+        if (instance == null) {
+            instance = new GameManager();
+        }
+        return instance;
+    }
+
     public void nextTurn() {
         currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+        System.out.println("Current player: " + players.get(currentPlayerIndex).getName());
+        updateButtonStates();
     }
 
     @FXML
@@ -86,8 +98,9 @@ public class GameManager implements Serializable {
 
     @FXML
     private void endTurnButtonOnAction(){
+        getCurrentPlayer().endTurn();
         nextTurn();
-        currentPlayerLabel.setText(players.get(currentPlayerIndex+1).getName());
+        currentPlayerLabel.setText(players.get(currentPlayerIndex).getName());
     }
 
     public Player getCurrentPlayer() {
@@ -388,9 +401,9 @@ public class GameManager implements Serializable {
         populateStreets();
         populateSpaces();
     }
+
     public void startGame() {
         populateBoard();
-
     }
 
     public int getGameID() {
@@ -411,9 +424,13 @@ public class GameManager implements Serializable {
 
     @FXML
     private void initialize() {
-        // This method is called by the FXMLLoader when initialization is complete
+        startGame();
         System.out.println("GameManager controller initialized");
-        if(players.size() == 2) {
+        currentPlayerLabel.setText(players.get(0).getName());
+        currentRollAmountLabel.setText("None");
+        updateButtonStates(); // Initialize button states based on the current player
+
+        if (players.size() == 2) {
             playerOneLabel.setText(players.get(0).getName());
             playerTwoLabel.setText(players.get(1).getName());
             playerThreeLabel.setVisible(false);
@@ -422,7 +439,7 @@ public class GameManager implements Serializable {
             playerThreePieceExample.setVisible(false);
             playerFourPiece.setVisible(false);
             playerFourPieceExample.setVisible(false);
-        } else if(players.size() == 3) {
+        } else if (players.size() == 3) {
             playerOneLabel.setText(players.get(0).getName());
             playerTwoLabel.setText(players.get(1).getName());
             playerThreeLabel.setText(players.get(2).getName());
@@ -435,5 +452,11 @@ public class GameManager implements Serializable {
             playerThreeLabel.setText(players.get(2).getName());
             playerFourLabel.setText(players.get(3).getName());
         }
+    }
+
+    private void updateButtonStates() {
+        boolean isCurrentPlayer = getCurrentPlayer().getUser().equals(ClientMain.loggedUser);
+        rollDiceButton.setDisable(!isCurrentPlayer);
+        endTurnButton.setDisable(!isCurrentPlayer);
     }
 }

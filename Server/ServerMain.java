@@ -269,11 +269,11 @@ public class ServerMain {
 
                     // Set gameStarted flag to true
                     lobby.setGameStarted(true);
+                    lobby.setGameManager(gameManager);
 
                     objectOut.writeObject("Game started successfully");
                     objectOut.writeObject(true);
                     objectOut.writeObject(gameManager);
-                    objectOut.writeObject(players);
                 }
             } finally {
                 lobbiesLock.writeLock().unlock();
@@ -290,6 +290,9 @@ public class ServerMain {
                 Lobby lobby = lobbies.get(lobbyName);
                 if (lobby != null) {
                     objectOut.writeObject(lobby.isGameStarted());
+                    if (lobby.isGameStarted()) {
+                        objectOut.writeObject(lobby.getGameManager());
+                    }
                 } else {
                     objectOut.writeObject(false);
                 }

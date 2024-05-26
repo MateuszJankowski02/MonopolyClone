@@ -366,7 +366,15 @@ public class ClientMain extends Application {
                 objectOut.writeObject(currentLobbyName);
                 boolean gameStarted = (boolean) objectIn.readObject();
                 if (gameStarted) {
-                    Platform.runLater(() -> primaryStage.setScene(gameScene));
+                    stopAutoRefreshGameStatus();
+                    GameManager gameManager = (GameManager) objectIn.readObject();
+                    Platform.runLater(() -> {
+                        try {
+                            gameManager.initializeGameUI(primaryStage);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
                 }
             } catch (IOException | ClassNotFoundException ex) {
                 ex.printStackTrace();
@@ -399,9 +407,6 @@ public class ClientMain extends Application {
                         } catch (ClassNotFoundException | IOException e) {
                             e.printStackTrace();
                         }
-                        // Transition to game scene
-
-                        //primaryStage.setScene(gameScene);
                     }
                 });
             } catch (IOException | ClassNotFoundException ex) {
