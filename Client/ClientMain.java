@@ -7,14 +7,15 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -37,6 +38,7 @@ public class ClientMain extends Application {
     public ListView<String> lobbyPlayersList;
     private ExecutorService executorService;
     private Timer lobbyPlayersTimer;
+    private Timer gameStatusTimer;
     private Scene gameScene;
     private Label currentPlayerLabel;
     private Label diceRollLabel;
@@ -112,16 +114,9 @@ public class ClientMain extends Application {
         Scene lobbyScene = new Scene(lobbyLayout, 300, 200);
 
         // Game scene
-        BorderPane gameLayout = new BorderPane();
-        GridPane boardGrid = new GridPane();
-        currentPlayerLabel = new Label("Current Player: ");
-        diceRollLabel = new Label("Dice Roll: ");
-        rollDiceButton = new Button("Roll Dice");
-        endTurnButton = new Button("End Turn");
-        VBox gameInfo = new VBox(10, currentPlayerLabel, diceRollLabel, rollDiceButton, endTurnButton);
-        gameLayout.setCenter(boardGrid);
-        gameLayout.setRight(gameInfo);
-        gameScene = new Scene(gameLayout, 800, 600);
+        FXMLLoader gameLoader = new FXMLLoader(getClass().getResource("/monopoly.fxml"));
+        AnchorPane gameLayout = gameLoader.load();
+        gameScene = new Scene(gameLayout);
 
         // Handle button actions
         loginLayout.getLoginButton().setOnAction(e -> {
@@ -255,6 +250,7 @@ public class ClientMain extends Application {
                                     currentLobbyName = lobbyName;
                                     primaryStage.setScene(lobbyScene);
                                     startAutoRefreshLobbyPlayers(lobbyName);
+                                    startAutoRefreshGameStatus(primaryStage);
                                 }
                             });
                         } catch (IOException ex) {
@@ -269,6 +265,7 @@ public class ClientMain extends Application {
 
         leaveLobbyButton.setOnAction(e -> {
             stopAutoRefreshLobbyPlayers();
+            stopAutoRefreshGameStatus();
             executorService.submit(() -> {
                 try {
                     dataOut.writeUTF("leaveLobby");
@@ -294,16 +291,6 @@ public class ClientMain extends Application {
             currentPlayer = new Player(loggedUser);
             System.out.println("Current player: " + currentPlayer.getUser().getNickname());
             startGame(primaryStage);
-        });
-
-        // Roll dice button action
-        rollDiceButton.setOnAction(e -> {
-            currentPlayer.rollDice();
-        });
-
-        // End turn button action
-        endTurnButton.setOnAction(e -> {
-            currentPlayer.endTurn();
         });
 
         Runtime.getRuntime().addShutdownHook(new Thread(Login::logoutUser));
@@ -365,6 +352,39 @@ public class ClientMain extends Application {
         if (lobbyPlayersTimer != null) {
             lobbyPlayersTimer.cancel();
         }
+    }
+
+    private void startAutoRefreshGameStatus(Stage primaryStage) {
+        gameStatusTimer = new Timer(true);
+        gameStatusTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                if (currentLobbyName != null) {
+                    checkIfGameStarted(primaryStage);
+                }
+            }
+        }, 0, 3000); // Check every 3 seconds
+    }
+
+    private void stopAutoRefreshGameStatus() {
+        if (gameStatusTimer != null) {
+            gameStatusTimer.cancel();
+        }
+    }
+
+    private void checkIfGameStarted(Stage primaryStage) {
+        executorService.submit(() -> {
+            try {
+                dataOut.writeUTF("checkGameState");
+                dataOut.writeUTF(currentLobbyName);
+                boolean gameStarted = dataIn.readBoolean();
+                if (gameStarted) {
+                    Platform.runLater(() -> primaryStage.setScene(gameScene));
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        });
     }
 
     private void startGame(Stage primaryStage) {

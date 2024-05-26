@@ -62,6 +62,7 @@ public class ServerMain {
         commandMap.put("getLobbyPlayers", new GetLobbyPlayersCommand());
         commandMap.put("leaveLobby", new LeaveLobbyCommand());
         commandMap.put("startGame", new StartGameCommand());
+        commandMap.put("checkGameState", new CheckGameStateCommand());
     }
 
     interface Command {
@@ -243,7 +244,6 @@ public class ServerMain {
         @Override
         public void execute(DataInputStream dataIn, DataOutputStream dataOut) throws IOException {
             String lobbyName = dataIn.readUTF();
-            System.out.println("TEST: " + lobbyName);
             User player = users.getUserById(dataIn.readInt());
             lobbiesLock.writeLock().lock();
             try {
@@ -258,19 +258,40 @@ public class ServerMain {
                     dataOut.writeUTF("Not enough players to start the game");
                     dataOut.writeBoolean(false);
                 } else {
-                    // Initialize game manager and start the game
                     ArrayList<Player> players = new ArrayList<>();
                     for (User user : lobby.getPlayers()) {
                         players.add(new Player(user));
                     }
                     GameManager gameManager = new GameManager(players);
                     gameManager.startGame();
+
+                    // Set gameStarted flag to true
+                    lobby.setGameStarted(true);
+
                     dataOut.writeUTF("Game started successfully");
                     dataOut.writeBoolean(true);
                     dataOut.writeInt(gameManager.getGameID());
                 }
             } finally {
                 lobbiesLock.writeLock().unlock();
+            }
+        }
+    }
+
+    public static class CheckGameStateCommand implements Command {
+        @Override
+        public void execute(DataInputStream dataIn, DataOutputStream dataOut) throws IOException {
+            String lobbyName = dataIn.readUTF();
+            lobbiesLock.readLock().lock();
+            try {
+                Lobby lobby = lobbies.get(lobbyName);
+                if (lobby != null) {
+                    dataOut.writeBoolean(lobby.isGameStarted());
+                } else {
+                    dataOut.writeBoolean(false);
+                }
+            } finally {
+                lobbiesLock.readLock().unlock();
             }
         }
     }

@@ -8,13 +8,15 @@ public class Lobby {
     private User owner;
     private String lobbyName;
     private int maxPlayers;
+    private boolean gameStarted;
 
     public Lobby(User owner, String lobbyName, int maxPlayers) {
         this.owner = owner;
         this.lobbyName = lobbyName;
         this.maxPlayers = maxPlayers;
         this.players = new ArrayList<>();
-        this.players.add(owner); // The owner is the first player in the lobby
+        this.players.add(owner);
+        this.gameStarted = false;
     }
 
     public boolean addPlayer(User player) {
@@ -60,5 +62,13 @@ public class Lobby {
 
     public int getMaxPlayers() {
         return maxPlayers;
+    }
+
+    public boolean isGameStarted() {
+        return gameStarted;
+    }
+
+    public void setGameStarted(boolean gameStarted) {
+        this.gameStarted = gameStarted;
     }
 }
