@@ -71,7 +71,8 @@ public class ClientMain extends Application {
         PasswordField confirmPasswordField = new PasswordField();
         confirmPasswordField.setPromptText("Confirm your password");
         Button confirmRegisterButton = new Button("Confirm Registration");
-        VBox registerLayout = new VBox(10, regUsernameField, regNicknameField, regPasswordField, confirmPasswordField, confirmRegisterButton);
+        Button backToLoginButton = new Button("Back to login");
+        VBox registerLayout = new VBox(10, regUsernameField, regNicknameField, regPasswordField, confirmPasswordField, confirmRegisterButton, backToLoginButton);
         registerLayout.setAlignment(Pos.CENTER);
         Scene registerScene = new Scene(registerLayout, 300, 200);
 
@@ -186,6 +187,8 @@ public class ClientMain extends Application {
                 }
             });
         });
+
+        backToLoginButton.setOnAction(e -> primaryStage.setScene(loginScene));
 
         confirmCreateLobbyButton.setOnAction(e -> {
             executorService.submit(() -> {
