@@ -1,5 +1,5 @@
-test123 test123 test123 true
-admin admin admin true
+test123 test123 test123 false
+admin admin admin false
 mateusz mateusz mateusz false
 kamil kamil kamil false
 maciek rafal maciek false

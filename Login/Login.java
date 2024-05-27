@@ -1,72 +1,38 @@
 package Login;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-
-import static Client.ClientMain.loggedUser;
+import java.sql.*;
 
 
 public class Login {
-
     public static User loginUser(String login, String password) {
-        List<String> lines = new ArrayList<>();
-        User loggedInUser = null;
 
-        try (BufferedReader reader = new BufferedReader(new FileReader("users.txt"))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(" ");
-                if (parts[0].equals(login) && parts[1].equals(password) && parts[3].equals("false")) {
-                    loggedInUser = new User(parts[2], parts[0], parts[1], true);
-                    line = parts[0] + " " + parts[1] + " " + parts[2] + " true";
+        try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/monopolydb", "root", "");
+             PreparedStatement statement = connection.prepareStatement("SELECT * FROM user WHERE login = ? AND password = ? AND isLoggedIn = false")) {
+            statement.setString(1, login);
+            statement.setString(2, password);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    // Update isLoggedIn status in the database
+                    PreparedStatement updateStatement = connection.prepareStatement("UPDATE user SET isLoggedIn = true WHERE id = ?");
+                    updateStatement.setInt(1, resultSet.getInt("id"));
+                    updateStatement.executeUpdate();
+                    return new User(resultSet.getString("nickname"), resultSet.getString("login"), resultSet.getString("password"), true);
                 }
-                lines.add(line);
             }
-        } catch (IOException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
-
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("users.txt"))) {
-            for (String line : lines) {
-                writer.write(line);
-                writer.newLine();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return loggedInUser;
+        return null;
     }
 
-    public static void logoutUser() {
-        if (loggedUser != null) {
-            List<String> lines = new ArrayList<>();
-            try (BufferedReader reader = new BufferedReader(new FileReader("users.txt"))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String[] parts = line.split(" ");
-                    if (parts[0].equals(loggedUser.getLogin())) {
-                        line = parts[0] + " " + parts[1] + " " + parts[2] + " false";
-                    }
-                    lines.add(line);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter("users.txt"))) {
-                for (String line : lines) {
-                    writer.write(line);
-                    writer.newLine();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+    public static void logoutUser(User user) {
+        System.out.println("Logging out user: " + user.getLogin() + " " + user.getNickname() + " " + user.getId());
+        try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/monopolydb", "root", "");
+             PreparedStatement statement = connection.prepareStatement("UPDATE user SET isLoggedIn = false WHERE login = ?")) {
+            statement.setString(1, user.getLogin());
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 }

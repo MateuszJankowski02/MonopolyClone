@@ -144,7 +144,7 @@ public class ClientMain extends Application {
         });
 
         logoutButton.setOnAction(e -> {
-            Login.logoutUser();
+            Login.logoutUser(loggedUser);
             loggedUser = null;
             loginLayout.clearFields();
             primaryStage.setScene(loginScene);
@@ -280,8 +280,12 @@ public class ClientMain extends Application {
             startGame(primaryStage);
         });
 
-        Runtime.getRuntime().addShutdownHook(new Thread(Login::logoutUser));
-
+        // execute logoutUser on shutdown
+        Runtime.getRuntime().addShutdownHook( new Thread(() -> {
+            if (loggedUser != null) {
+                Login.logoutUser(loggedUser);
+            }
+        }));
         primaryStage.setScene(loginScene);
         primaryStage.setTitle("Monopoly Game");
         primaryStage.show();

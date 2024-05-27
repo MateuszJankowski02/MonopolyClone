@@ -1,29 +1,33 @@
 package Login;
 
-import java.io.*;
+import java.sql.*;
+
 
 public class Register {
-    public void registerUser(String name, String login, String password) {
-        User newUser = new User(name, login, password, false);
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("users.txt", true))) {
-            writer.write(newUser.toString());
-            writer.newLine();
-        } catch (IOException e) {
+    public static void registerUser(String name, String login, String password) {
+        try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/monopolydb", "root", "");
+             PreparedStatement statement = connection.prepareStatement("INSERT INTO user (nickname, login, password, isLoggedIn) VALUES (?, ?, ?, false)")) {
+            statement.setString(1, name);
+            statement.setString(2, login);
+            statement.setString(3, password);
+            statement.executeUpdate();
+        } catch (SQLException e) {
             e.printStackTrace();
+            System.out.println("Error while registering user.");
         }
     }
 
-    // Check if login already exists
-    public boolean checkLogin(String login) {
-        try (BufferedReader reader = new BufferedReader(new FileReader("users.txt"))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(" ");
-                if (parts[0].equals(login)) {
-                    return true;
-                }
+    public static boolean checkLogin(String login) {
+        try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/monopolydb", "root", "");
+             Statement statement = connection.createStatement();) {
+            String query = "SELECT * FROM user WHERE login = " + login;
+            ResultSet resultSet = statement.executeQuery(query);
+            if(!resultSet.isBeforeFirst()){
+                return false;
+            } else {
+                return true;
             }
-        } catch (IOException e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         return false;

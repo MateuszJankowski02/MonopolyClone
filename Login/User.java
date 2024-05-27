@@ -1,9 +1,8 @@
 package Login;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+
 import java.io.Serializable;
+import java.sql.*;
 import java.util.ArrayList;
 
 public class User implements Serializable {
@@ -14,21 +13,21 @@ public class User implements Serializable {
     private String login;
     private String password;
     private int score;
-    private boolean isloggedIn;
+    private boolean isLoggedIn;
 
-    public User(String name, String login, String password, Boolean isloggedIn) {
+    public User(String name, String login, String password, boolean isLoggedIn) {
         this.id = idCounter++;
         this.nickname = name;
         this.login = login;
         this.password = password;
         this.score = 0;
-        this.isloggedIn = isloggedIn;
+        this.isLoggedIn = isLoggedIn;
     }
 
     public static class Users {
         public ArrayList<User> users = new ArrayList<>();
 
-        public Users(){
+        public Users() {
             refresh();
         }
 
@@ -36,41 +35,45 @@ public class User implements Serializable {
             users.add(user);
         }
 
-        public User getUserById(int id){
-            for(User user : users){
-                if(user.getId() == id){
+        public User getUserById(int id) {
+            for (User user : users) {
+                if (user.getId() == id) {
                     return user;
                 }
             }
             return null;
         }
 
-        public User getUserByLogin(String login){
-            for(User user : users){
-                if(user.getLogin().equals(login)){
+        public User getUserByLogin(String login) {
+            for (User user : users) {
+                if (user.getLogin().equals(login)) {
                     return user;
                 }
             }
             return null;
         }
 
-        public void refresh(){
+        public void refresh() {
             users.clear();
-            try (BufferedReader reader = new BufferedReader(new FileReader("users.txt"))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String[] parts = line.split(" ");
-                    users.add(new User(parts[2], parts[0], parts[1], parts[3].equals("true")));
+            try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/monopolydb", "root", "");
+                 PreparedStatement statement = connection.prepareStatement("SELECT * FROM user");
+                 ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    int id = resultSet.getInt("id");
+                    String nickname = resultSet.getString("nickname");
+                    String login = resultSet.getString("login");
+                    String password = resultSet.getString("password");
+                    boolean isLoggedIn = resultSet.getBoolean("isLoggedIn");
+                    users.add(new User(nickname, login, password, isLoggedIn));
                 }
-            } catch (IOException e) {
+            } catch (SQLException e) {
                 e.printStackTrace();
             }
         }
-
     }
 
-    public Boolean getIsLoggedIn() {
-        return isloggedIn;
+    public boolean isLoggedIn() {
+        return isLoggedIn;
     }
 
     public String getLogin() {
@@ -99,7 +102,7 @@ public class User implements Serializable {
 
     @Override
     public String toString() {
-        return login + " " + password + " " + nickname + " " + isloggedIn;
+        return login + " " + password + " " + nickname + " " + isLoggedIn;
     }
 
     public String getName() {

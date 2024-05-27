@@ -98,14 +98,13 @@ public class ServerMain {
             String nicknameInput = (String) objectIn.readObject();
             String loginInput = (String) objectIn.readObject();
             String passwordInput = (String) objectIn.readObject();
-            Register register = new Register();
 
             usersLock.writeLock().lock();
             try {
-                if (register.checkLogin(loginInput)) {
+                if (Register.checkLogin(loginInput)) {
                     objectOut.writeObject("Login already exists");
                 } else {
-                    register.registerUser(nicknameInput, loginInput, passwordInput);
+                    Register.registerUser(nicknameInput, loginInput, passwordInput);
                     objectOut.writeObject("Registration successful");
                     users.refresh();
                 }
