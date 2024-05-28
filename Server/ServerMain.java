@@ -5,7 +5,6 @@ import Login.Register;
 import Login.User;
 import Lobby.Lobby;
 import Utilities.Player;
-import javafx.stage.Stage;
 
 import java.io.*;
 import java.net.*;

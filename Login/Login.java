@@ -16,7 +16,8 @@ public class Login {
                     PreparedStatement updateStatement = connection.prepareStatement("UPDATE user SET isLoggedIn = true WHERE id = ?");
                     updateStatement.setInt(1, resultSet.getInt("id"));
                     updateStatement.executeUpdate();
-                    return new User(resultSet.getString("nickname"), resultSet.getString("login"), resultSet.getString("password"), true);
+                    return new User(resultSet.getString("nickname"), resultSet.getString("login"),
+                            resultSet.getString("password"), true);
                 }
             }
         } catch (SQLException e) {
