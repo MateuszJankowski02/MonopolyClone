@@ -1,7 +1,9 @@
 package Client;
 
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ListView;
 import javafx.stage.Stage;
 import javafx.application.Application;
 
@@ -10,6 +12,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Objects;
 
 import User.User;
 import Lobby.Lobby;
@@ -32,8 +35,8 @@ public class ClientMainNew extends Application {
 
         System.out.println("Connected to server: " + socket);
 
-        ObjectInputStream objectIn = new ObjectInputStream(socket.getInputStream());
         ObjectOutputStream objectOut = new ObjectOutputStream(socket.getOutputStream());
+        ObjectInputStream objectIn = new ObjectInputStream(socket.getInputStream());
 
         // Login scene
         LoginLayout loginLayout = new LoginLayout();
@@ -53,7 +56,15 @@ public class ClientMainNew extends Application {
 
         // List lobbies scene
         ListLobbiesLayout listLobbiesLayout = new ListLobbiesLayout();
-        Scene ListLobbiesScene = new Scene(listLobbiesLayout, 300, 200);
+        Scene listLobbiesScene = new Scene(listLobbiesLayout, 300, 200);
+
+        // Lobby scene
+        LobbyLayout lobbyLayout = new LobbyLayout();
+        Scene lobbyScene = new Scene(lobbyLayout, 300, 200);
+
+        primaryStage.setScene(loginScene);
+        primaryStage.setTitle("Client");
+        primaryStage.show();
 
         /*
 
@@ -64,11 +75,13 @@ public class ClientMainNew extends Application {
         // Login Scene - Login button
         loginLayout.getLoginButton().setOnAction(e -> {
             if (loginLayout.getUsernameField().getText().isEmpty() || loginLayout.getPasswordField().getText().isEmpty()) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setTitle("Error");
-                alert.setHeaderText("Empty fields");
-                alert.setContentText("Please fill in all fields");
-                alert.showAndWait();
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Error");
+                    alert.setHeaderText("Empty fields");
+                    alert.setContentText("Please fill in all fields");
+                    alert.showAndWait();
+                });
                 return;
             }
             Thread loginThread = new Thread(new Runnable(){
@@ -76,36 +89,42 @@ public class ClientMainNew extends Application {
                 public void run() {
                     try {
                         objectOut.writeObject("login");
+                        if(!(Boolean) objectIn.readObject()) return;
                         objectOut.writeObject(loginLayout.getUsernameField().getText());
                         objectOut.writeObject(loginLayout.getPasswordField().getText());
                         objectOut.flush();
 
                         Boolean response = (Boolean) objectIn.readObject();
+
                         if (!response){
-                            Alert alert = new Alert(Alert.AlertType.ERROR);
-                            alert.setTitle("Error");
-                            alert.setHeaderText("Login failed");
-                            alert.setContentText("Invalid username or password");
-                            alert.showAndWait();
+                            System.out.println("Login failed");
+                            Platform.runLater(() -> {
+                                Alert alert = new Alert(Alert.AlertType.ERROR);
+                                alert.setTitle("Error");
+                                alert.setHeaderText("Login failed");
+                                alert.setContentText("Invalid username, password or user already logged in");
+                                alert.showAndWait();
+                            });
                             return;
                         }
 
                         currentUser = (User) objectIn.readObject();
-                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                        alert.setTitle("Success");
-                        alert.setHeaderText("Login successful");
-                        alert.setContentText("Welcome, " + currentUser.getNickname());
-                        alert.showAndWait();
-
-                        primaryStage.setScene(mainMenuScene);
-                        loginLayout.clearFields();
-
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                            alert.setTitle("Success");
+                            alert.setHeaderText("Login successful");
+                            alert.setContentText("Welcome, " + currentUser.getNickname());
+                            alert.showAndWait();
+                            primaryStage.setScene(mainMenuScene);
+                            loginLayout.clearFields();
+                        });
 
                     } catch (IOException | ClassNotFoundException ex) {
                         ex.printStackTrace();
                     }
                 }
             });
+            loginThread.start();
         });
 
         // Login Scene - Register button
@@ -140,6 +159,7 @@ public class ClientMainNew extends Application {
                 public void run() {
                     try {
                         objectOut.writeObject("register");
+                        if(!(Boolean) objectIn.readObject()) return;
                         objectOut.writeObject(registerLayout.getUsernameField().getText());
                         objectOut.writeObject(registerLayout.getPasswordField().getText());
                         objectOut.writeObject(registerLayout.getNicknameField().getText());
@@ -178,6 +198,12 @@ public class ClientMainNew extends Application {
                     }
                 }
             });
+            registerThread.start();
+        });
+
+        // Register scene - Back to login button
+        registerLayout.getBackToLoginButton().setOnAction(e -> {
+            primaryStage.setScene(loginScene);
         });
 
         // Main menu scene - Create lobby button
@@ -187,7 +213,7 @@ public class ClientMainNew extends Application {
 
         // Main menu scene - List lobbies button
         mainMenuLayout.getListLobbiesButton().setOnAction(e -> {
-            primaryStage.setScene(ListLobbiesScene);
+            primaryStage.setScene(listLobbiesScene);
         });
 
         // Main menu scene - Logout button
@@ -205,30 +231,39 @@ public class ClientMainNew extends Application {
                 public void run() {
                     try {
                         objectOut.writeObject("logout");
-                        objectOut.writeObject(currentUser.getLogin());
+                        if(!(Boolean) objectIn.readObject()) return;
+                        System.out.println("Logging out user: " + currentUser.getLogin());
+                        System.out.println(currentUser);
+                        objectOut.writeObject(currentUser);
                         objectOut.flush();
                         Boolean response = (Boolean) objectIn.readObject();
                         if (!response){
-                            Alert alert = new Alert(Alert.AlertType.ERROR);
-                            alert.setTitle("Error");
-                            alert.setHeaderText("Logout failed");
-                            alert.setContentText("Error occurred during logout, please try again later");
-                            alert.showAndWait();
+                            Platform.runLater(() -> {
+                                Alert alert = new Alert(Alert.AlertType.ERROR);
+                                alert.setTitle("Error");
+                                alert.setHeaderText("Logout failed");
+                                alert.setContentText("Error occurred during logout, please try again later");
+                                alert.showAndWait();
+                            });
                             return;
                         }
-                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                        alert.setTitle("Success");
-                        alert.setHeaderText("Logout successful");
-                        alert.setContentText("You have been logged out");
-                        alert.showAndWait();
-
                         currentUser = null;
-                        primaryStage.setScene(loginScene);
+
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                            alert.setTitle("Success");
+                            alert.setHeaderText("Logout successful");
+                            alert.setContentText("You have been logged out");
+                            alert.showAndWait();
+
+                            primaryStage.setScene(loginScene);
+                        });
                     } catch (IOException | ClassNotFoundException ex) {
                         ex.printStackTrace();
                     }
                 }
             });
+            logoutThread.start();
         });
 
         // Main menu scene - Exit button
@@ -238,14 +273,16 @@ public class ClientMainNew extends Application {
                 public void run() {
                     try {
                         objectOut.writeObject("exit");
+                        if(!(Boolean) objectIn.readObject()) return;
                         objectOut.writeObject(currentUser.getLogin());
                         objectOut.flush();
                         socket.close();
-                    } catch (IOException ex) {
+                    } catch (IOException | ClassNotFoundException ex) {
                         ex.printStackTrace();
                     }
                 }
             });
+            exitThread.start();
             primaryStage.close();
         });
 
@@ -278,35 +315,47 @@ public class ClientMainNew extends Application {
                 public void run() {
                     try {
                         objectOut.writeObject("createLobby");
+                        if(!(Boolean) objectIn.readObject()) return;
                         objectOut.writeObject(createLobbyLayout.getLobbyNameField().getText());
                         objectOut.writeObject(Integer.parseInt(createLobbyLayout.getMaxPlayersField().getText()));
+                        System.out.println(currentUser);
                         objectOut.writeObject(currentUser);
                         objectOut.flush();
 
                         Boolean response = (Boolean) objectIn.readObject();
                         if (!response){
-                            Alert alert = new Alert(Alert.AlertType.ERROR);
-                            alert.setTitle("Error");
-                            alert.setHeaderText("Lobby creation failed");
-                            alert.setContentText("Lobby with that name already exists");
-                            alert.showAndWait();
+                            Platform.runLater(() -> {
+                                Alert alert = new Alert(Alert.AlertType.ERROR);
+                                alert.setTitle("Error");
+                                alert.setHeaderText("Lobby creation failed");
+                                alert.setContentText("Lobby with that name already exists");
+                                alert.showAndWait();
+                            });
                             return;
                         }
-                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                        alert.setTitle("Success");
-                        alert.setHeaderText("Lobby created");
-                        alert.setContentText("Lobby has been created");
-                        alert.showAndWait();
-
                         Lobby lobby = (Lobby) objectIn.readObject();
                         currentLobby = lobby;
-                        primaryStage.setScene(lobby.getLobbyScene());
+                        ListView<String> lobbyUsersList = new ListView<>();
+                        lobby.getUsers().forEach(user -> {
+                            lobbyUsersList.getItems().add(user.getNickname());
+                        });
 
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                            alert.setTitle("Success");
+                            alert.setHeaderText("Lobby created");
+                            alert.setContentText("Lobby has been created");
+                            alert.showAndWait();
+
+                            lobbyLayout.setLobbyPlayersList(lobbyUsersList);
+                            primaryStage.setScene(lobbyScene);
+                        });
                     } catch (IOException | ClassNotFoundException ex) {
                         ex.printStackTrace();
                     }
                 }
             });
+            createLobbyThread.start();
         });
     }
 }

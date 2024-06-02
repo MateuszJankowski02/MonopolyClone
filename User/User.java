@@ -6,7 +6,7 @@ import java.sql.*;
 import java.util.HashMap;
 
 public class User implements Serializable {
-    private static final long serialVersionUID = 3L;
+    private static final long serialVersionUID = 3734252398452134L;
     private String nickname;
     private String login;
     private String password;
@@ -83,6 +83,15 @@ public class User implements Serializable {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder result = new StringBuilder();
+            for (User user : users.values()) {
+                result.append(user.toString()).append("\n");
+            }
+            return result.toString();
         }
     }
 }

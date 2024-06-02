@@ -1,7 +1,7 @@
 package Server;
 
 import BoardSpaces.*;
-import Client.ClientMain;
+import Client.ClientMainNew;
 import Utilities.Player;
 
 import java.io.IOException;
@@ -27,7 +27,7 @@ import javafx.stage.Stage;
 public class GameManager implements Serializable {
 
     private static GameManager instance;
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 123812731287345L;
     private static int gameID = 0;
     private ArrayList<Player> players;
     private ArrayList<Board> boardSpaces = new ArrayList<>();
@@ -86,7 +86,7 @@ public class GameManager implements Serializable {
     public void nextTurn() {
         currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
         System.out.println("Current player: " + players.get(currentPlayerIndex).getName());
-        updateButtonStates();
+        //updateButtonStates();
     }
 
     @FXML
@@ -428,7 +428,7 @@ public class GameManager implements Serializable {
         System.out.println("GameManager controller initialized");
         currentPlayerLabel.setText(players.get(0).getName());
         currentRollAmountLabel.setText("None");
-        updateButtonStates(); // Initialize button states based on the current player
+        //updateButtonStates(); // Initialize button states based on the current player
 
         if (players.size() == 2) {
             playerOneLabel.setText(players.get(0).getName());
@@ -454,9 +454,12 @@ public class GameManager implements Serializable {
         }
     }
 
+    /*
     private void updateButtonStates() {
-        boolean isCurrentPlayer = getCurrentPlayer().getUser().equals(ClientMain.loggedUser);
+        boolean isCurrentPlayer = getCurrentPlayer().getUser().equals(ClientMainNew.currentUser);
         rollDiceButton.setDisable(!isCurrentPlayer);
         endTurnButton.setDisable(!isCurrentPlayer);
     }
+
+     */
 }

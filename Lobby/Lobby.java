@@ -2,16 +2,20 @@ package Lobby;
 
 import User.User;
 import Server.GameManager;
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.control.ListView;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class Lobby {
+public class Lobby implements Serializable {
+    private static final long serialVersionUID = 1332257598815134L;
     private ArrayList<User> users;
     private User owner;
     private String lobbyName;
     private int maxUsers;
-    private LobbyScene lobbyScene;
     private GameManager gameManager;
     private boolean gameStarted;
 
@@ -20,15 +24,15 @@ public class Lobby {
         this.lobbyName = lobbyName;
         this.maxUsers = maxUsers;
         this.users = new ArrayList<>();
-        this.lobbyScene = new LobbyScene();
         this.gameStarted = false;
+        this.gameManager = null;
         addUser(owner);
+
     }
 
     public boolean addUser(User user) {
         if (users.size() < maxUsers) {
             users.add(user);
-            lobbyScene.addUserToList(user.getNickname());
             return true;
         } else {
             return false;
@@ -39,7 +43,6 @@ public class Lobby {
         boolean removed = users.remove(user);
         if (removed && user.equals(owner)) {
             changeOwner();
-            lobbyScene.removeUserFromList(user.getNickname());
         }
         return removed;
     }
@@ -74,10 +77,6 @@ public class Lobby {
 
     public boolean isGameStarted() {
         return gameStarted;
-    }
-
-    public LobbyScene getLobbyScene() {
-        return lobbyScene;
     }
 
     public void setGameStarted(boolean gameStarted) {

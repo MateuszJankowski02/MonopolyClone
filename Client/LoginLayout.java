@@ -15,7 +15,7 @@ public class LoginLayout extends VBox {
         usernameField.setPromptText("Enter your username");
         PasswordField passwordField = new PasswordField();
         passwordField.setPromptText("Enter your password");
-        Button loginButton = new Button("User");
+        Button loginButton = new Button("Login");
         Button registerButton = new Button("Register");
 
         this.getChildren().addAll(usernameField, passwordField, loginButton, registerButton);

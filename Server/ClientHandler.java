@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,24 +32,30 @@ class ClientHandler implements Runnable
     @Override
     public void run() {
         String clientCommand;
+        initializeCommands();
         while (true)
         {
             try
             {
                 // receive the string with the command from the client
                 clientCommand = (String) objectIn.readObject();
+                System.out.println("Command received: " + clientCommand);
 
                 // map the command to the appropriate function
                 Command command = commandMap.get(clientCommand);
+                System.out.println("Command: " + command);
 
                 if (command != null) {
                     // execute the command
-                    objectOut.writeObject("Command received: " + clientCommand);
+                    objectOut.writeObject(true);
                     command.execute(objectIn, objectOut);
                 } else {
                     // if the command is not recognized, send an error message to the client
-                    objectOut.writeObject("Unknown command");
+                    objectOut.writeObject(false);
                 }
+            } catch (SocketException e) {
+                System.out.println("Client " + name + " disconnected");
+                break;
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
             }
@@ -79,8 +86,13 @@ class ClientHandler implements Runnable
             String username = (String) objectIn.readObject();
             String password = (String) objectIn.readObject();
             System.out.println("Login attempt: " + username + ", " + password);
-            User user = ServerMain.users.loginUser(username, password);
+            System.out.println("Users before:");
+            System.out.println(ServerMainNew.users);
+            User user = ServerMainNew.users.loginUser(username, password);
+            System.out.println("Users after:");
+            System.out.println(ServerMainNew.users);
             if (user == null) {
+                System.out.println("Login failed");
                 objectOut.writeObject(false);
                 return;
             }
@@ -97,7 +109,7 @@ class ClientHandler implements Runnable
             String password = (String) objectIn.readObject();
             String nickname = (String) objectIn.readObject();
             System.out.println("Register attempt: " + username + ", " + password + ", " + nickname);
-            String response = ServerMain.users.registerUser(username, password, nickname);
+            String response = ServerMainNew.users.registerUser(username, password, nickname);
             objectOut.writeObject(response);
             objectOut.flush();
         }
@@ -136,7 +148,7 @@ class ClientHandler implements Runnable
         @Override
         public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
             User user = (User) objectIn.readObject();
-            Boolean response = ServerMain.users.logoutUser(user);
+            Boolean response = ServerMainNew.users.logoutUser(user);
             objectOut.writeObject(response);
         }
     }
@@ -148,7 +160,7 @@ class ClientHandler implements Runnable
             if(user == null){
                 return;
             }
-            ServerMain.users.logoutUser(user);
+            ServerMainNew.users.logoutUser(user);
         }
     }
 

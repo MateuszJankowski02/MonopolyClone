@@ -1,4 +1,4 @@
-package Lobby;
+package Client;
 
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;

@@ -7,7 +7,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 public class Player implements Serializable {
-    private static final long serialVersionUID = 2L;
+    private static final long serialVersionUID = 947327287353485L;
     private static int idCounter = 0;
     private int id;
     private User user;
@@ -118,7 +118,7 @@ public class Player implements Serializable {
     }
 
     public String getName(){
-        return user.getName();
+        return user.getNickname();
     }
 
     public int getMoney() {

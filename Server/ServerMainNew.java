@@ -21,6 +21,8 @@ public class ServerMainNew {
             ServerSocket server = new ServerSocket(PORT);
             Socket socket;
 
+            System.out.println("Server started on port " + PORT + "...");
+
             while (true) {
                 socket = server.accept();
                 System.out.println("New client request received: " + socket);

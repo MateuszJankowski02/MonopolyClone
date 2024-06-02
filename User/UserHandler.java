@@ -8,19 +8,20 @@ public class UserHandler {
 
     protected static User loginUser(String login, String password, User.Users users) {
 
-        if(users.users.containsKey(login)) {
-            User user = users.users.get(login);
-            if(user.getPassword().equals(password)) {
-                try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/monopolydb", "root", "");
-                     PreparedStatement statement = connection.prepareStatement("UPDATE user SET isLoggedIn = true WHERE login = ?")) {
-                    statement.setString(1, login);
-                    statement.executeUpdate();
-                    users.fetchUsers();
-                    return user;
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
+        if (login == null || password == null) return null;
+        if (!users.users.containsKey(login)) return null;
+        User user = users.users.get(login);
+        if (!user.getPassword().equals(password)) return null;
+        if (user.isLoggedIn()) return null;
+
+        try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/monopolydb", "root", "");
+             PreparedStatement statement = connection.prepareStatement("UPDATE user SET isLoggedIn = true WHERE login = ?")) {
+            statement.setString(1, login);
+            statement.executeUpdate();
+            users.fetchUsers();
+            return user;
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
         return null;
     }
