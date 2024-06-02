@@ -1,8 +1,8 @@
 package Server;
 
-import Login.Login;
-import Login.Register;
-import Login.User;
+import User.Login;
+import User.Register;
+import User.User;
 import Lobby.Lobby;
 import Utilities.Player;
 
@@ -18,7 +18,7 @@ public class ServerMain {
     static HashMap<String, Lobby> lobbies = new HashMap<>();
     private static final ReentrantReadWriteLock lobbiesLock = new ReentrantReadWriteLock();
     private static final ReentrantReadWriteLock usersLock = new ReentrantReadWriteLock();
-    private static final Map<String, Command> commandMap = new HashMap<>();
+    private static final Map<String, Commanda> commandMap = new HashMap<>();
 
     public static void main(String[] args) {
         initializeCommands();
@@ -40,9 +40,9 @@ public class ServerMain {
 
             while (true) {
                 String commandKey = (String) objectIn.readObject();
-                Command command = commandMap.get(commandKey);
-                if (command != null) {
-                    command.execute(objectIn, objectOut);
+                Commanda commanda = commandMap.get(commandKey);
+                if (commanda != null) {
+                    commanda.execute(objectIn, objectOut);
                 } else {
                     objectOut.writeObject("Unknown command");
                 }
@@ -54,22 +54,22 @@ public class ServerMain {
     }
 
     private static void initializeCommands() {
-        commandMap.put("login", new LoginCommand());
-        commandMap.put("register", new RegisterCommand());
-        commandMap.put("createLobby", new CreateLobbyCommand());
-        commandMap.put("joinLobby", new JoinLobbyCommand());
-        commandMap.put("listLobbies", new ListLobbiesCommand());
-        commandMap.put("getLobbyPlayers", new GetLobbyPlayersCommand());
-        commandMap.put("leaveLobby", new LeaveLobbyCommand());
-        commandMap.put("startGame", new StartGameCommand());
-        commandMap.put("checkGameState", new CheckGameStateCommand());
+        commandMap.put("login", new LoginCommanda());
+        commandMap.put("register", new RegisterCommanda());
+        commandMap.put("createLobby", new CreateLobbyCommanda());
+        commandMap.put("joinLobby", new JoinLobbyCommanda());
+        commandMap.put("listLobbies", new ListLobbiesCommanda());
+        commandMap.put("getLobbyPlayers", new GetLobbyPlayersCommanda());
+        commandMap.put("leaveLobby", new LeaveLobbyCommanda());
+        commandMap.put("startGame", new StartGameCommanda());
+        commandMap.put("checkGameState", new CheckGameStateCommanda());
     }
 
-    interface Command {
+    interface Commanda {
         void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException;
     }
 
-    static class LoginCommand implements Command {
+    static class LoginCommanda implements Commanda {
         @Override
         public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
             String username = (String) objectIn.readObject();
@@ -78,7 +78,7 @@ public class ServerMain {
 
             usersLock.readLock().lock();
             try {
-                if (Login.loginUser(username, password) != null) {
+                if (User.loginUser(username, password) != null) {
                     System.out.println("User " + username + " logged in successfully");
                     objectOut.writeObject(true);
                 } else {
@@ -91,7 +91,7 @@ public class ServerMain {
         }
     }
 
-    static class RegisterCommand implements Command {
+    static class RegisterCommanda implements Commanda {
         @Override
         public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
             String nicknameInput = (String) objectIn.readObject();
@@ -113,7 +113,7 @@ public class ServerMain {
         }
     }
 
-    static class CreateLobbyCommand implements Command {
+    static class CreateLobbyCommanda implements Commanda {
         @Override
         public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
             String lobbyNameCreate = (String) objectIn.readObject();
@@ -137,7 +137,7 @@ public class ServerMain {
         }
     }
 
-    static class JoinLobbyCommand implements Command {
+    static class JoinLobbyCommanda implements Commanda {
         @Override
         public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
             String lobbyNameJoin = (String) objectIn.readObject();
@@ -148,7 +148,7 @@ public class ServerMain {
                 if (lobbyJoin == null) {
                     objectOut.writeObject("Lobby does not exist");
                     objectOut.writeObject(false);
-                } else if (lobbyJoin.getPlayers().size() < lobbyJoin.getMaxPlayers()) {
+                } else if (lobbyJoin.getPlayers().size() < lobbyJoin.getMaxUsers()) {
                     lobbyJoin.addPlayer(player);
                     objectOut.writeObject("Joined lobby");
                     objectOut.writeObject(true);
@@ -162,7 +162,7 @@ public class ServerMain {
         }
     }
 
-    static class ListLobbiesCommand implements Command {
+    static class ListLobbiesCommanda implements Commanda {
         @Override
         public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException {
             lobbiesLock.readLock().lock();
@@ -172,7 +172,7 @@ public class ServerMain {
                     Lobby lobby = lobbies.get(lobbyName);
                     objectOut.writeObject(lobby.getLobbyName());
                     objectOut.writeObject(String.valueOf(lobby.getPlayers().size()));
-                    objectOut.writeObject(String.valueOf(lobby.getMaxPlayers()));
+                    objectOut.writeObject(String.valueOf(lobby.getMaxUsers()));
                     objectOut.writeObject(lobby.getOwner().getNickname());
                 }
             } finally {
@@ -181,7 +181,7 @@ public class ServerMain {
         }
     }
 
-    static class GetLobbyPlayersCommand implements Command {
+    static class GetLobbyPlayersCommanda implements Commanda {
         @Override
         public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
             String lobbyName = (String) objectIn.readObject();
@@ -202,7 +202,7 @@ public class ServerMain {
         }
     }
 
-    static class LeaveLobbyCommand implements Command {
+    static class LeaveLobbyCommanda implements Commanda {
         @Override
         public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
             int userId = (int) objectIn.readObject();
@@ -240,7 +240,7 @@ public class ServerMain {
         }
     }
 
-    public static class StartGameCommand implements Command {
+    public static class StartGameCommanda implements Commanda {
         @Override
         public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
             String lobbyName = (String) objectIn.readObject();
@@ -279,7 +279,7 @@ public class ServerMain {
         }
     }
 
-    public static class CheckGameStateCommand implements Command {
+    public static class CheckGameStateCommanda implements Commanda {
         @Override
         public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
             String lobbyName = (String) objectIn.readObject();

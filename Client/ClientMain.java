@@ -1,19 +1,17 @@
 // File: ClientMain.java
 package Client;
 
-import Login.Login;
+import User.Login;
 import Server.GameManager;
 import Utilities.Player;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -24,7 +22,7 @@ import java.util.concurrent.Executors;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import Login.User;
+import User.User;
 import Server.ServerMain;
 
 public class ClientMain extends Application {
@@ -145,7 +143,7 @@ public class ClientMain extends Application {
         });
 
         logoutButton.setOnAction(e -> {
-            Login.logoutUser(loggedUser);
+            User.logoutUser(loggedUser);
             loggedUser = null;
             loginLayout.clearFields();
             primaryStage.setScene(loginScene);
@@ -286,7 +284,7 @@ public class ClientMain extends Application {
         // execute logoutUser on shutdown
         Runtime.getRuntime().addShutdownHook( new Thread(() -> {
             if (loggedUser != null) {
-                Login.logoutUser(loggedUser);
+                User.logoutUser(loggedUser);
             }
         }));
         primaryStage.setScene(loginScene);

@@ -1,14 +1,10 @@
 package Client;
 
-import Login.User;
 import javafx.geometry.Pos;
-import javafx.scene.control.ListView;
 import javafx.scene.layout.VBox;
 import javafx.scene.control.Button;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
-
-import java.awt.*;
 
 public class LoginLayout extends VBox {
     public LoginLayout() {
@@ -19,7 +15,7 @@ public class LoginLayout extends VBox {
         usernameField.setPromptText("Enter your username");
         PasswordField passwordField = new PasswordField();
         passwordField.setPromptText("Enter your password");
-        Button loginButton = new Button("Login");
+        Button loginButton = new Button("User");
         Button registerButton = new Button("Register");
 
         this.getChildren().addAll(usernameField, passwordField, loginButton, registerButton);

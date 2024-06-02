@@ -1,7 +1,7 @@
 package Utilities;
 
 import BoardSpaces.BoardSpaceStreet;
-import Login.User;
+import User.User;
 
 import java.io.Serializable;
 import java.util.ArrayList;
