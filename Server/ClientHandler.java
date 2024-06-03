@@ -10,23 +10,24 @@ import java.util.HashMap;
 import java.util.Map;
 
 import User.User;
+import Lobby.Lobby;
 
-class ClientHandler implements Runnable
-{
+public class ClientHandler implements Runnable {
+
     private static final Map<String, Command> commandMap = new HashMap<>();
-    private String name;
+    private int clientID;
     final ObjectInputStream objectIn;
     final ObjectOutputStream objectOut;
     Socket socket;
     boolean isloggedin;
 
     // constructor
-    public ClientHandler(Socket socket, String name, ObjectInputStream objectIn, ObjectOutputStream objectOut) {
-        this.objectIn   = objectIn;
-        this.objectOut  = objectOut;
-        this.name       = name;
-        this.socket     = socket;
-        this.isloggedin = true;
+    public ClientHandler(Socket socket, int clientID, ObjectInputStream objectIn, ObjectOutputStream objectOut) {
+        this.objectIn      = objectIn;
+        this.objectOut     = objectOut;
+        this.clientID = clientID;
+        this.socket        = socket;
+        this.isloggedin    = true;
     }
 
     @Override
@@ -48,13 +49,13 @@ class ClientHandler implements Runnable
                 if (command != null) {
                     // execute the command
                     objectOut.writeObject(true);
-                    command.execute(objectIn, objectOut);
+                    command.execute(objectIn, objectOut, clientID);
                 } else {
                     // if the command is not recognized, send an error message to the client
                     objectOut.writeObject(false);
                 }
             } catch (SocketException e) {
-                System.out.println("Client " + name + " disconnected");
+                System.out.println("Client " + clientID + " disconnected");
                 break;
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
@@ -75,14 +76,24 @@ class ClientHandler implements Runnable
         commandMap.put("checkGameState", new CheckGameStateCommand());
     }
 
+    public void notifyListenersRefreshLobbyUsers(Lobby lobby){
+        try{
+            objectOut.writeObject("refreshLobbyUsers");
+            objectOut.writeObject(lobby);
+            objectOut.flush();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     interface Command {
-        void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException;
+        void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut, int clientID) throws IOException, ClassNotFoundException;
     }
 
     static class LoginCommand implements Command {
         @Override
-        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
+        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut, int clientID) throws IOException, ClassNotFoundException {
             String username = (String) objectIn.readObject();
             String password = (String) objectIn.readObject();
             System.out.println("Login attempt: " + username + ", " + password);
@@ -104,7 +115,7 @@ class ClientHandler implements Runnable
 
     static class RegisterCommand implements Command {
         @Override
-        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
+        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut, int clientID) throws IOException, ClassNotFoundException {
             String username = (String) objectIn.readObject();
             String password = (String) objectIn.readObject();
             String nickname = (String) objectIn.readObject();
@@ -117,12 +128,13 @@ class ClientHandler implements Runnable
 
     static class CreateLobbyCommand implements Command {
         @Override
-        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
+        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut, int clientID) throws IOException, ClassNotFoundException {
             String lobbyName = (String) objectIn.readObject();
             Integer maxPlayers = (Integer) objectIn.readObject();
             User owner = (User) objectIn.readObject();
 
-            Boolean response = ServerMainNew.lobbies.createLobby(lobbyName, maxPlayers, owner);
+            boolean response = ServerMainNew.lobbies.createLobby(lobbyName, clientID, maxPlayers, owner);
+            System.out.println("Lobby created: " + response);
             objectOut.writeObject(response);
             if (!response) return;
             objectOut.writeObject(ServerMainNew.lobbies.getLobbyByName(lobbyName)); // typecast to Lobby
@@ -132,30 +144,31 @@ class ClientHandler implements Runnable
 
     static class JoinLobbyCommand implements Command {
         @Override
-        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
+        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut, int ClientID) throws IOException, ClassNotFoundException {
 
         }
     }
 
     static class ListLobbiesCommand implements Command {
         @Override
-        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException {
-
+        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut, int ClientID) throws IOException {
+            objectOut.writeObject(ServerMainNew.lobbies.getLobbiesList());
+            objectOut.flush();
         }
     }
 
     static class LogoutCommand implements Command {
         @Override
-        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
+        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut, int ClientID) throws IOException, ClassNotFoundException {
             User user = (User) objectIn.readObject();
-            Boolean response = ServerMainNew.users.logoutUser(user);
+            boolean response = ServerMainNew.users.logoutUser(user);
             objectOut.writeObject(response);
         }
     }
 
     static class ExitCommand implements Command {
         @Override
-        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
+        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut, int ClientID) throws IOException, ClassNotFoundException {
             User user = (User) objectIn.readObject();
             if(user == null){
                 return;
@@ -166,29 +179,33 @@ class ClientHandler implements Runnable
 
     static class GetLobbyPlayersCommand implements Command {
         @Override
-        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
+        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut, int ClientID) throws IOException, ClassNotFoundException {
 
         }
     }
 
     static class LeaveLobbyCommand implements Command {
         @Override
-        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
+        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut, int ClientID) throws IOException, ClassNotFoundException {
 
         }
     }
 
     public static class StartGameCommand implements Command {
         @Override
-        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
+        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut, int ClientID) throws IOException, ClassNotFoundException {
 
         }
     }
 
     public static class CheckGameStateCommand implements Command {
         @Override
-        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut) throws IOException, ClassNotFoundException {
+        public void execute(ObjectInputStream objectIn, ObjectOutputStream objectOut, int ClientID) throws IOException, ClassNotFoundException {
 
         }
+    }
+
+    public int getClientID() {
+        return clientID;
     }
 }

@@ -32,7 +32,7 @@ public class ServerMainNew {
 
                 System.out.println("Creating a new handler for this client...");
 
-                ClientHandler client = new ClientHandler(socket, "client " + i, objectIn, objectOut);
+                ClientHandler client = new ClientHandler(socket, i, objectIn, objectOut);
 
                 Thread thread = new Thread(client);
 
@@ -46,6 +46,15 @@ public class ServerMainNew {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    public static void notifyClient(int clientID, Lobby lobby){
+        for (ClientHandler client : clients) {
+            if (client.getClientID() == clientID) {
+                client.notifyListenersRefreshLobbyUsers(lobby);
+                break;
+            }
         }
     }
 }

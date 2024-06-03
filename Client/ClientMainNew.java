@@ -12,7 +12,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Objects;
+import java.util.ArrayList;
 
 import User.User;
 import Lobby.Lobby;
@@ -24,6 +24,7 @@ public class ClientMainNew extends Application {
     final static int PORT = 8080;
     private User currentUser = null;
     private Lobby currentLobby = null;
+    private Thread lobbyListener = null;
     public static void main(String[] args) {
         launch(args);
     }
@@ -89,12 +90,12 @@ public class ClientMainNew extends Application {
                 public void run() {
                     try {
                         objectOut.writeObject("login");
-                        if(!(Boolean) objectIn.readObject()) return;
+                        if(!(boolean) objectIn.readObject()) return;
                         objectOut.writeObject(loginLayout.getUsernameField().getText());
                         objectOut.writeObject(loginLayout.getPasswordField().getText());
                         objectOut.flush();
 
-                        Boolean response = (Boolean) objectIn.readObject();
+                        boolean response = (boolean) objectIn.readObject();
 
                         if (!response){
                             System.out.println("Login failed");
@@ -159,7 +160,7 @@ public class ClientMainNew extends Application {
                 public void run() {
                     try {
                         objectOut.writeObject("register");
-                        if(!(Boolean) objectIn.readObject()) return;
+                        if(!(boolean) objectIn.readObject()) return;
                         objectOut.writeObject(registerLayout.getUsernameField().getText());
                         objectOut.writeObject(registerLayout.getPasswordField().getText());
                         objectOut.writeObject(registerLayout.getNicknameField().getText());
@@ -231,12 +232,12 @@ public class ClientMainNew extends Application {
                 public void run() {
                     try {
                         objectOut.writeObject("logout");
-                        if(!(Boolean) objectIn.readObject()) return;
+                        if(!(boolean) objectIn.readObject()) return;
                         System.out.println("Logging out user: " + currentUser.getLogin());
                         System.out.println(currentUser);
                         objectOut.writeObject(currentUser);
                         objectOut.flush();
-                        Boolean response = (Boolean) objectIn.readObject();
+                        boolean response = (boolean) objectIn.readObject();
                         if (!response){
                             Platform.runLater(() -> {
                                 Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -273,7 +274,7 @@ public class ClientMainNew extends Application {
                 public void run() {
                     try {
                         objectOut.writeObject("exit");
-                        if(!(Boolean) objectIn.readObject()) return;
+                        if(!(boolean) objectIn.readObject()) return;
                         objectOut.writeObject(currentUser.getLogin());
                         objectOut.flush();
                         socket.close();
@@ -315,14 +316,14 @@ public class ClientMainNew extends Application {
                 public void run() {
                     try {
                         objectOut.writeObject("createLobby");
-                        if(!(Boolean) objectIn.readObject()) return;
+                        if(!(boolean) objectIn.readObject()) return;
                         objectOut.writeObject(createLobbyLayout.getLobbyNameField().getText());
                         objectOut.writeObject(Integer.parseInt(createLobbyLayout.getMaxPlayersField().getText()));
-                        System.out.println(currentUser);
                         objectOut.writeObject(currentUser);
                         objectOut.flush();
 
-                        Boolean response = (Boolean) objectIn.readObject();
+                        boolean response = (boolean) objectIn.readObject();
+                        System.out.println("Response:" + response);
                         if (!response){
                             Platform.runLater(() -> {
                                 Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -350,6 +351,9 @@ public class ClientMainNew extends Application {
                             lobbyLayout.setLobbyPlayersList(lobbyUsersList);
                             primaryStage.setScene(lobbyScene);
                         });
+
+                        startLobbyListener(objectIn, lobbyLayout);
+
                     } catch (IOException | ClassNotFoundException ex) {
                         ex.printStackTrace();
                     }
@@ -357,5 +361,107 @@ public class ClientMainNew extends Application {
             });
             createLobbyThread.start();
         });
+
+        // Create lobby scene - Back to main menu button
+        createLobbyLayout.getBackToMainMenuButton().setOnAction(e -> {
+            primaryStage.setScene(mainMenuScene);
+        });
+
+        // List lobbies scene - Join lobby
+        listLobbiesLayout.getLobbiesList().setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2) {
+                // to be implemented
+            }
+        });
+
+        // List lobbies scene - Refresh button
+        listLobbiesLayout.getRefreshLobbiesButton().setOnAction(e -> {
+            Thread refreshThread = new Thread(new Runnable(){
+                @Override
+                public void run() {
+                    try {
+                        objectOut.writeObject("listLobbies");
+                        if(!(boolean) objectIn.readObject()) return;
+                        objectOut.flush();
+
+                        ListView<String> lobbiesList = new ListView<>();
+                        ArrayList<String> lobbies = (ArrayList<String>) objectIn.readObject();
+                        lobbies.forEach(lobby -> {
+                            lobbiesList.getItems().add(lobby);
+                        });
+
+                        Platform.runLater(() -> {
+                            listLobbiesLayout.setLobbiesList(lobbiesList);
+                        });
+
+                    } catch (IOException | ClassNotFoundException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            });
+            refreshThread.start();
+        });
+
+        // List lobbies scene - Back to main menu button
+        listLobbiesLayout.getBackToMainMenuFromListButton().setOnAction(e -> {
+            primaryStage.setScene(mainMenuScene);
+        });
+
+        // Lobby scene - Start game button
+        lobbyLayout.getStartGameButton().setOnAction(e -> {
+            // to be implemented
+        });
+
+        // Lobby scene - Leave lobby button
+        lobbyLayout.getLeaveLobbyButton().setOnAction(e -> {
+            // to be implemented
+        });
+
+        // When client shuts down unexpectedly logout user
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+                try {
+                    objectOut.writeObject("exit");
+                    if(!(boolean) objectIn.readObject()) return;
+                    objectOut.writeObject(currentUser.getLogin());
+                    objectOut.flush();
+                    socket.close();
+                } catch (IOException | ClassNotFoundException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+    }
+
+    public void startLobbyListener(ObjectInputStream objectIn, LobbyLayout lobbyLayout) {
+        lobbyListener = new Thread(new Runnable(){
+            @Override
+            public void run() {
+                try {
+                    while (true) {
+                        String command = (String) objectIn.readObject();
+                        if (command.equals("refreshLobbyUsers")) {
+                            Lobby updatedLobby = (Lobby) objectIn.readObject();
+                            ListView<String> lobbyUsersList = new ListView<>();
+
+                            updatedLobby.getUsers().forEach(user -> {
+                                lobbyUsersList.getItems().add(user.getNickname());
+                            });
+
+                            Platform.runLater(() -> {
+                                lobbyLayout.setLobbyPlayersList(lobbyUsersList);
+                            });
+                        }
+                    }
+                } catch (IOException | ClassNotFoundException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+        lobbyListener.start();
+    }
+
+    public void stopLobbyListener() {
+        lobbyListener.interrupt();
     }
 }

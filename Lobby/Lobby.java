@@ -1,50 +1,61 @@
 package Lobby;
 
+import Server.ServerMainNew;
 import User.User;
 import Server.GameManager;
-import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
-import javafx.scene.control.ListView;
+import Server.ClientHandler;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+
 public class Lobby implements Serializable {
     private static final long serialVersionUID = 1332257598815134L;
     private ArrayList<User> users;
+    private ArrayList<Integer> listenersIDs;
     private User owner;
     private String lobbyName;
     private int maxUsers;
     private GameManager gameManager;
     private boolean gameStarted;
 
-    public Lobby(User owner, String lobbyName, int maxUsers) {
+    public Lobby(User owner, int listenerID, String lobbyName, int maxUsers) {
         this.owner = owner;
         this.lobbyName = lobbyName;
         this.maxUsers = maxUsers;
         this.users = new ArrayList<>();
+        this.listenersIDs = new ArrayList<>();
         this.gameStarted = false;
         this.gameManager = null;
-        addUser(owner);
-
+        users.add(owner);
+        listenersIDs.add(listenerID);
     }
 
-    public boolean addUser(User user) {
+    public boolean addUser(User user, int listener) {
         if (users.size() < maxUsers) {
             users.add(user);
+            listenersIDs.add(listener);
+            notifyListeners();
             return true;
         } else {
             return false;
         }
     }
 
-    public boolean removePlayer(User user) {
+    public void removePlayer(User user, int listener) {
         boolean removed = users.remove(user);
+        listenersIDs.remove(listener);
+        notifyListeners();
         if (removed && user.equals(owner)) {
             changeOwner();
         }
-        return removed;
+    }
+
+    public void notifyListeners() {
+        for (int listenerID : listenersIDs) {
+            ServerMainNew.notifyClient(listenerID, this);
+        }
     }
 
     private void changeOwner() {
@@ -95,11 +106,11 @@ public class Lobby implements Serializable {
 
         public Lobbies(){};
 
-        public boolean createLobby(String lobbyName, int maxPlayers, User owner) {
+        public boolean createLobby(String lobbyName, int listenerID, int maxPlayers, User owner) {
             if (lobbies.containsKey(lobbyName)) {
                 return false;
             }
-            lobbies.put(lobbyName, new Lobby(owner, lobbyName, maxPlayers));
+            lobbies.put(lobbyName, new Lobby(owner, listenerID, lobbyName, maxPlayers));
             return true;
         }
 
