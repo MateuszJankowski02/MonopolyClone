@@ -3,8 +3,8 @@ package Server;
 import Lobby.Lobby;
 import User.User;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Vector;
@@ -27,12 +27,12 @@ public class ServerMainNew {
                 socket = server.accept();
                 System.out.println("New client request received: " + socket);
 
-                ObjectInputStream objectIn = new ObjectInputStream(socket.getInputStream());
-                ObjectOutputStream objectOut = new ObjectOutputStream(socket.getOutputStream());
+                DataInputStream dataIn = new DataInputStream(socket.getInputStream());
+                DataOutputStream dataOut = new DataOutputStream(socket.getOutputStream());
 
                 System.out.println("Creating a new handler for this client...");
 
-                ClientHandler client = new ClientHandler(socket, i, objectIn, objectOut);
+                ClientHandler client = new ClientHandler(socket, i, dataIn, dataOut);
 
                 Thread thread = new Thread(client);
 
@@ -50,6 +50,8 @@ public class ServerMainNew {
     }
 
     public static void notifyClient(int clientID, Lobby lobby){
+        //display users
+        lobby.getUsers().forEach(user -> System.out.println("TEST2 " + user.getNickname()));
         for (ClientHandler client : clients) {
             if (client.getClientID() == clientID) {
                 client.notifyListenersRefreshLobbyUsers(lobby);

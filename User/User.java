@@ -59,7 +59,7 @@ public class User implements Serializable {
             return UserHandler.registerUser(login, password, nickname, this);
         }
 
-        public User loginUser(String login, String password){
+        public boolean loginUser(String login, String password){
             return UserHandler.loginUser(login, password, this);
         }
 

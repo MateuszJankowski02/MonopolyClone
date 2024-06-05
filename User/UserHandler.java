@@ -6,24 +6,24 @@ import java.sql.*;
 
 public class UserHandler {
 
-    protected static User loginUser(String login, String password, User.Users users) {
+    protected static boolean loginUser(String login, String password, User.Users users) {
 
-        if (login == null || password == null) return null;
-        if (!users.users.containsKey(login)) return null;
+        if (login == null || password == null) return false;
+        if (!users.users.containsKey(login)) return false;
         User user = users.users.get(login);
-        if (!user.getPassword().equals(password)) return null;
-        if (user.isLoggedIn()) return null;
+        if (!user.getPassword().equals(password)) return false;
+        if (user.isLoggedIn()) return false;
 
         try (Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/monopolydb", "root", "");
              PreparedStatement statement = connection.prepareStatement("UPDATE user SET isLoggedIn = true WHERE login = ?")) {
             statement.setString(1, login);
             statement.executeUpdate();
             users.fetchUsers();
-            return user;
+            return true;
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return null;
+        return false;
     }
 
     protected static Boolean logoutUser(User user, User.Users users) {

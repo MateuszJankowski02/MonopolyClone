@@ -11,17 +11,17 @@ public class LoginLayout extends VBox {
         super(10);
         this.setAlignment(Pos.CENTER);
 
-        TextField usernameField = new TextField();
-        usernameField.setPromptText("Enter your username");
+        TextField loginField = new TextField();
+        loginField.setPromptText("Enter your login");
         PasswordField passwordField = new PasswordField();
         passwordField.setPromptText("Enter your password");
         Button loginButton = new Button("Login");
         Button registerButton = new Button("Register");
 
-        this.getChildren().addAll(usernameField, passwordField, loginButton, registerButton);
+        this.getChildren().addAll(loginField, passwordField, loginButton, registerButton);
     }
 
-    public TextField getUsernameField() {
+    public TextField getLoginField() {
         return (TextField) this.getChildren().get(0);
     }
 
@@ -38,7 +38,7 @@ public class LoginLayout extends VBox {
     }
 
     public void clearFields() {
-        this.getUsernameField().clear();
+        this.getLoginField().clear();
         this.getPasswordField().clear();
     }
 }

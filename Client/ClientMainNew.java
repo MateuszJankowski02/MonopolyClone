@@ -1,30 +1,31 @@
 package Client;
 
 import javafx.application.Platform;
+import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
-import javafx.scene.control.ListView;
+import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
 import javafx.application.Application;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 
 import User.User;
-import Lobby.Lobby;
 
 
 public class ClientMainNew extends Application {
 
     final static String HOST = "localhost";
     final static int PORT = 8080;
-    private User currentUser = null;
-    private Lobby currentLobby = null;
-    private Thread lobbyListener = null;
+    private Thread lobbyListener;
+    private String currentUserLogin = null;
+    private String currentLobbyName = null;
+
     public static void main(String[] args) {
         launch(args);
     }
@@ -36,8 +37,8 @@ public class ClientMainNew extends Application {
 
         System.out.println("Connected to server: " + socket);
 
-        ObjectOutputStream objectOut = new ObjectOutputStream(socket.getOutputStream());
-        ObjectInputStream objectIn = new ObjectInputStream(socket.getInputStream());
+        DataOutputStream dataOut = new DataOutputStream(socket.getOutputStream());
+        DataInputStream dataIn = new DataInputStream(socket.getInputStream());
 
         // Login scene
         LoginLayout loginLayout = new LoginLayout();
@@ -75,7 +76,7 @@ public class ClientMainNew extends Application {
 
         // Login Scene - Login button
         loginLayout.getLoginButton().setOnAction(e -> {
-            if (loginLayout.getUsernameField().getText().isEmpty() || loginLayout.getPasswordField().getText().isEmpty()) {
+            if (loginLayout.getLoginField().getText().isEmpty() || loginLayout.getPasswordField().getText().isEmpty()) {
                 Platform.runLater(() -> {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setTitle("Error");
@@ -89,13 +90,13 @@ public class ClientMainNew extends Application {
                 @Override
                 public void run() {
                     try {
-                        objectOut.writeObject("login");
-                        if(!(boolean) objectIn.readObject()) return;
-                        objectOut.writeObject(loginLayout.getUsernameField().getText());
-                        objectOut.writeObject(loginLayout.getPasswordField().getText());
-                        objectOut.flush();
+                        dataOut.writeUTF("login");;
+                        String userLogin = loginLayout.getLoginField().getText();
+                        dataOut.writeUTF(userLogin);
+                        dataOut.writeUTF(loginLayout.getPasswordField().getText());
+                        dataOut.flush();
 
-                        boolean response = (boolean) objectIn.readObject();
+                        boolean response = (boolean) dataIn.readBoolean();
 
                         if (!response){
                             System.out.println("Login failed");
@@ -109,18 +110,18 @@ public class ClientMainNew extends Application {
                             return;
                         }
 
-                        currentUser = (User) objectIn.readObject();
+                        currentUserLogin = userLogin;
                         Platform.runLater(() -> {
                             Alert alert = new Alert(Alert.AlertType.INFORMATION);
                             alert.setTitle("Success");
                             alert.setHeaderText("Login successful");
-                            alert.setContentText("Welcome, " + currentUser.getNickname());
+                            alert.setContentText("Welcome, " + currentUserLogin);
                             alert.showAndWait();
                             primaryStage.setScene(mainMenuScene);
                             loginLayout.clearFields();
                         });
 
-                    } catch (IOException | ClassNotFoundException ex) {
+                    } catch (IOException ex) {
                         ex.printStackTrace();
                     }
                 }
@@ -159,42 +160,46 @@ public class ClientMainNew extends Application {
                 @Override
                 public void run() {
                     try {
-                        objectOut.writeObject("register");
-                        if(!(boolean) objectIn.readObject()) return;
-                        objectOut.writeObject(registerLayout.getUsernameField().getText());
-                        objectOut.writeObject(registerLayout.getPasswordField().getText());
-                        objectOut.writeObject(registerLayout.getNicknameField().getText());
-                        objectOut.flush();
+                        dataOut.writeUTF("register");
+                        dataOut.writeUTF(registerLayout.getUsernameField().getText());
+                        dataOut.writeUTF(registerLayout.getPasswordField().getText());
+                        dataOut.writeUTF(registerLayout.getNicknameField().getText());
+                        dataOut.flush();
 
-                        String response = (String) objectIn.readObject();
+                        String response = dataIn.readUTF();
                         if (response.equals("exists")){
-                            Alert alert = new Alert(Alert.AlertType.ERROR);
-                            alert.setTitle("Error");
-                            alert.setHeaderText("Registration failed");
-                            alert.setContentText("Username already exists, change your username");
-                            alert.showAndWait();
+                            Platform.runLater(() -> {
+                                Alert alert = new Alert(Alert.AlertType.ERROR);
+                                alert.setTitle("Error");
+                                alert.setHeaderText("Registration failed");
+                                alert.setContentText("Username already exists, change your username");
+                                alert.showAndWait();
+                            });
                             return;
                         }
 
                         if (response.equals("error")){
-                            Alert alert = new Alert(Alert.AlertType.ERROR);
-                            alert.setTitle("Error");
-                            alert.setHeaderText("Registration failed");
-                            alert.setContentText("An error occurred, please try again later");
-                            alert.showAndWait();
+                            Platform.runLater(() -> {
+                                Alert alert = new Alert(Alert.AlertType.ERROR);
+                                alert.setTitle("Error");
+                                alert.setHeaderText("Registration failed");
+                                alert.setContentText("An error occurred, please try again later");
+                                alert.showAndWait();
+                            });
                             return;
                         }
 
-                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                        alert.setTitle("Success");
-                        alert.setHeaderText("Registration successful");
-                        alert.setContentText("You can now login with your new account");
-                        alert.showAndWait();
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                            alert.setTitle("Success");
+                            alert.setHeaderText("Registration successful");
+                            alert.setContentText("You can now login with your new account");
+                            alert.showAndWait();
 
-                        primaryStage.setScene(loginScene);
-                        registerLayout.clearFields();
-
-                    } catch (IOException | ClassNotFoundException ex) {
+                            primaryStage.setScene(loginScene);
+                            registerLayout.clearFields();
+                        });
+                    } catch (IOException ex) {
                         ex.printStackTrace();
                     }
                 }
@@ -219,7 +224,7 @@ public class ClientMainNew extends Application {
 
         // Main menu scene - Logout button
         mainMenuLayout.getLogoutButton().setOnAction(e -> {
-            if(currentUser == null){
+            if(currentUserLogin == null){
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("Error");
                 alert.setHeaderText("Not logged in");
@@ -231,13 +236,12 @@ public class ClientMainNew extends Application {
                 @Override
                 public void run() {
                     try {
-                        objectOut.writeObject("logout");
-                        if(!(boolean) objectIn.readObject()) return;
-                        System.out.println("Logging out user: " + currentUser.getLogin());
-                        System.out.println(currentUser);
-                        objectOut.writeObject(currentUser);
-                        objectOut.flush();
-                        boolean response = (boolean) objectIn.readObject();
+                        dataOut.writeUTF("logout");
+                        System.out.println("Logging out user: " + currentUserLogin);
+                        System.out.println(currentUserLogin);
+                        dataOut.writeUTF(currentUserLogin);
+                        dataOut.flush();
+                        boolean response = dataIn.readBoolean();
                         if (!response){
                             Platform.runLater(() -> {
                                 Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -248,7 +252,7 @@ public class ClientMainNew extends Application {
                             });
                             return;
                         }
-                        currentUser = null;
+                        currentUserLogin = null;
 
                         Platform.runLater(() -> {
                             Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -259,7 +263,7 @@ public class ClientMainNew extends Application {
 
                             primaryStage.setScene(loginScene);
                         });
-                    } catch (IOException | ClassNotFoundException ex) {
+                    } catch (IOException ex) {
                         ex.printStackTrace();
                     }
                 }
@@ -273,12 +277,11 @@ public class ClientMainNew extends Application {
                 @Override
                 public void run() {
                     try {
-                        objectOut.writeObject("exit");
-                        if(!(boolean) objectIn.readObject()) return;
-                        objectOut.writeObject(currentUser.getLogin());
-                        objectOut.flush();
+                        dataOut.writeUTF("exit");
+                        dataOut.writeUTF(currentUserLogin);
+                        dataOut.flush();
                         socket.close();
-                    } catch (IOException | ClassNotFoundException ex) {
+                    } catch (IOException ex) {
                         ex.printStackTrace();
                     }
                 }
@@ -315,14 +318,14 @@ public class ClientMainNew extends Application {
                 @Override
                 public void run() {
                     try {
-                        objectOut.writeObject("createLobby");
-                        if(!(boolean) objectIn.readObject()) return;
-                        objectOut.writeObject(createLobbyLayout.getLobbyNameField().getText());
-                        objectOut.writeObject(Integer.parseInt(createLobbyLayout.getMaxPlayersField().getText()));
-                        objectOut.writeObject(currentUser);
-                        objectOut.flush();
+                        dataOut.writeUTF("createLobby");
+                        String lobbyName = createLobbyLayout.getLobbyNameField().getText();
+                        dataOut.writeUTF(lobbyName);
+                        dataOut.writeInt(Integer.parseInt(createLobbyLayout.getMaxPlayersField().getText()));
+                        dataOut.writeUTF(currentUserLogin);
+                        dataOut.flush();
 
-                        boolean response = (boolean) objectIn.readObject();
+                        boolean response = dataIn.readBoolean();
                         System.out.println("Response:" + response);
                         if (!response){
                             Platform.runLater(() -> {
@@ -334,12 +337,16 @@ public class ClientMainNew extends Application {
                             });
                             return;
                         }
-                        Lobby lobby = (Lobby) objectIn.readObject();
-                        currentLobby = lobby;
-                        ListView<String> lobbyUsersList = new ListView<>();
-                        lobby.getUsers().forEach(user -> {
-                            lobbyUsersList.getItems().add(user.getNickname());
-                        });
+
+                        ArrayList<String> listOfUsers = new ArrayList<>();
+                        currentLobbyName = lobbyName;
+                        int listOfUsersSize = dataIn.readInt();
+                        for (int i = 0; i < listOfUsersSize; i++) {
+                            String user = dataIn.readUTF();
+                            listOfUsers.add(user);
+                            System.out.println("User: " + user);
+                        }
+
 
                         Platform.runLater(() -> {
                             Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -348,13 +355,15 @@ public class ClientMainNew extends Application {
                             alert.setContentText("Lobby has been created");
                             alert.showAndWait();
 
-                            lobbyLayout.setLobbyPlayersList(lobbyUsersList);
+                            lobbyLayout.clearUsers();
+                            listOfUsers.forEach(lobbyLayout::addUser);
+
                             primaryStage.setScene(lobbyScene);
                         });
 
-                        startLobbyListener(objectIn, lobbyLayout);
+                        startLobbyListener(dataIn, lobbyLayout);
 
-                    } catch (IOException | ClassNotFoundException ex) {
+                    } catch (IOException ex) {
                         ex.printStackTrace();
                     }
                 }
@@ -368,10 +377,79 @@ public class ClientMainNew extends Application {
         });
 
         // List lobbies scene - Join lobby
-        listLobbiesLayout.getLobbiesList().setOnMouseClicked(e -> {
-            if (e.getClickCount() == 2) {
-                // to be implemented
+        listLobbiesLayout.getLobbiesList().setOnMouseClicked(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent click) {
+                if (click.getClickCount() == 2) {
+                    String selectedLobbyName = listLobbiesLayout.getLobbiesList().getSelectionModel().getSelectedItem();
+                    System.out.println("Selected lobby: " + selectedLobbyName);
+
+                    if (selectedLobbyName == null) {
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.ERROR);
+                            alert.setTitle("Error");
+                            alert.setHeaderText("No lobby selected");
+                            alert.setContentText("Selected lobby does not exist");
+                            alert.showAndWait();
+                        });
+                        return;
+                    }
+                    Thread joinLobbyThread = new Thread(new Runnable(){
+                        @Override
+                        public void run() {
+                            try {
+                                dataOut.writeUTF("joinLobby");
+                                dataOut.writeUTF(selectedLobbyName);
+                                dataOut.writeUTF(currentUserLogin);
+                                dataOut.flush();
+                                
+                                boolean response = dataIn.readBoolean();
+                                System.out.println("Response:" + response);
+
+                                if (!response){
+                                    Platform.runLater(() -> {
+                                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                                        alert.setTitle("Error");
+                                        alert.setHeaderText("Joining lobby failed");
+                                        alert.setContentText("Lobby is full or game has already started");
+                                        alert.showAndWait();
+                                    });
+                                    return;
+                                }
+                                ArrayList<String> listOfUsers = new ArrayList<>();
+                                currentLobbyName = selectedLobbyName;
+                                int listOfUsersSize = dataIn.readInt();
+                                for (int i = 0; i < listOfUsersSize; i++) {
+                                    String user = dataIn.readUTF();
+                                    listOfUsers.add(user);
+                                    System.out.println("User: " + user);
+                                }
+
+                                Platform.runLater(() -> {
+                                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                                    alert.setTitle("Success");
+                                    alert.setHeaderText("Lobby joined");
+                                    alert.setContentText("You have joined the lobby");
+                                    alert.showAndWait();
+
+                                    lobbyLayout.clearUsers();
+
+                                    listOfUsers.forEach(lobbyLayout::addUser);
+
+                                    primaryStage.setScene(lobbyScene);
+                                });
+
+                                startLobbyListener(dataIn, lobbyLayout);
+
+                            } catch (IOException ex) {
+                                ex.printStackTrace();
+                            }
+                        }
+                    });
+                    joinLobbyThread.start();
+                }
             }
+
         });
 
         // List lobbies scene - Refresh button
@@ -380,21 +458,31 @@ public class ClientMainNew extends Application {
                 @Override
                 public void run() {
                     try {
-                        objectOut.writeObject("listLobbies");
-                        if(!(boolean) objectIn.readObject()) return;
-                        objectOut.flush();
+                        dataOut.writeUTF("listLobbies");
+                        dataOut.flush();
 
-                        ListView<String> lobbiesList = new ListView<>();
-                        ArrayList<String> lobbies = (ArrayList<String>) objectIn.readObject();
-                        lobbies.forEach(lobby -> {
-                            lobbiesList.getItems().add(lobby);
-                        });
+                        ArrayList<String> listOfLobbies = new ArrayList<>();
+                        int listOfLobbiesSize = dataIn.readInt();
+                        for (int i = 0; i < listOfLobbiesSize; i++) {
+                            String lobby = dataIn.readUTF();
+                            listOfLobbies.add(lobby);
+                            System.out.println("Lobby: " + lobby);
+                        }
+
 
                         Platform.runLater(() -> {
-                            listLobbiesLayout.setLobbiesList(lobbiesList);
+                            listLobbiesLayout.clearLobbies();
+                            listOfLobbies.forEach(listLobbiesLayout::addLobby);
+
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                            alert.setTitle("Success");
+                            alert.setHeaderText("Lobbies refreshed");
+                            alert.setContentText("Lobbies have been refreshed");
+                            alert.showAndWait();
+
                         });
 
-                    } catch (IOException | ClassNotFoundException ex) {
+                    } catch (IOException ex) {
                         ex.printStackTrace();
                     }
                 }
@@ -414,54 +502,91 @@ public class ClientMainNew extends Application {
 
         // Lobby scene - Leave lobby button
         lobbyLayout.getLeaveLobbyButton().setOnAction(e -> {
-            // to be implemented
+
+            Thread leaveLobbyThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        dataOut.writeUTF("stopListener");
+                        dataOut.writeUTF("leaveLobby");
+
+                        dataOut.writeUTF(currentLobbyName);
+                        dataOut.writeUTF(currentUserLogin);
+
+                        boolean removedSuccess = dataIn.readBoolean();
+                        if (!removedSuccess){
+                            Platform.runLater(() -> {
+                                Alert alert = new Alert(Alert.AlertType.ERROR);
+                                alert.setTitle("Error");
+                                alert.setHeaderText("Leaving lobby failed");
+                                alert.setContentText("Error occurred during leaving lobby, could not remove player");
+                                alert.showAndWait();
+                            });
+                            startLobbyListener(dataIn, lobbyLayout);
+                            return;
+                        }
+                        currentLobbyName = null;
+
+                        Platform.runLater(() -> {
+                            primaryStage.setScene(mainMenuScene);
+                        });
+
+                    } catch (IOException ex) {
+                        startLobbyListener(dataIn, lobbyLayout);
+                        ex.printStackTrace();
+                    }
+                }
+            });
+            leaveLobbyThread.start();
         });
 
         // When client shuts down unexpectedly logout user
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
                 try {
-                    objectOut.writeObject("exit");
-                    if(!(boolean) objectIn.readObject()) return;
-                    objectOut.writeObject(currentUser.getLogin());
-                    objectOut.flush();
+                    dataOut.writeUTF("exit");
+                    if(!dataIn.readBoolean()) return;
+                    dataOut.writeUTF(currentUserLogin);
+                    dataOut.flush();
                     socket.close();
-                } catch (IOException | ClassNotFoundException ex) {
+                } catch (IOException ex) {
                     ex.printStackTrace();
                 }
             }
         });
     }
 
-    public void startLobbyListener(ObjectInputStream objectIn, LobbyLayout lobbyLayout) {
+    public void startLobbyListener(DataInputStream dataIn, LobbyLayout lobbyLayout) {
         lobbyListener = new Thread(new Runnable(){
             @Override
             public void run() {
                 try {
                     while (true) {
-                        String command = (String) objectIn.readObject();
+                        String command = dataIn.readUTF();
+                        System.out.println("Command received client: " + command);
                         if (command.equals("refreshLobbyUsers")) {
-                            Lobby updatedLobby = (Lobby) objectIn.readObject();
-                            ListView<String> lobbyUsersList = new ListView<>();
-
-                            updatedLobby.getUsers().forEach(user -> {
-                                lobbyUsersList.getItems().add(user.getNickname());
-                            });
+                            System.out.println("Refreshing lobby users");
+                            ArrayList<String> listOfUsers = new ArrayList<>();
+                            int listOfUsersSize = dataIn.readInt();
+                            for (int i = 0; i < listOfUsersSize; i++) {
+                                String user = dataIn.readUTF();
+                                listOfUsers.add(user);
+                                System.out.println("User: " + user);
+                            }
 
                             Platform.runLater(() -> {
-                                lobbyLayout.setLobbyPlayersList(lobbyUsersList);
+                                lobbyLayout.clearUsers();
+                                listOfUsers.forEach(lobbyLayout::addUser);
                             });
+                        } else if (command.equals("stopListener")) {
+                            break;
                         }
                     }
-                } catch (IOException | ClassNotFoundException ex) {
+                } catch (IOException ex) {
                     ex.printStackTrace();
                 }
             }
         });
         lobbyListener.start();
-    }
-
-    public void stopLobbyListener() {
-        lobbyListener.interrupt();
     }
 }

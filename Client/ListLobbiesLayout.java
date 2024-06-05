@@ -7,11 +7,14 @@ import javafx.scene.layout.VBox;
 
 
 public class ListLobbiesLayout extends VBox {
+
+    private ListView<String> lobbiesList;
+
     public ListLobbiesLayout() {
         super(10);
         this.setAlignment(Pos.CENTER);
 
-        ListView<String> lobbiesList = new ListView<>();
+        lobbiesList = new ListView<>();
         Button refreshLobbiesButton = new Button("Refresh");
         Button backToMainMenuFromListButton = new Button("Back to main menu");
 
@@ -30,8 +33,12 @@ public class ListLobbiesLayout extends VBox {
         return (Button) this.getChildren().get(2);
     }
 
-    public void setLobbiesList(ListView<String> lobbiesList) {
-        this.getChildren().set(0, lobbiesList);
+    public void addLobby(String lobbyName) {
+        lobbiesList.getItems().add(lobbyName);
+    }
+
+    public void clearLobbies() {
+        lobbiesList.getItems().clear();
     }
 
 }

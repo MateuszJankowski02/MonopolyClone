@@ -3,7 +3,6 @@ package Lobby;
 import Server.ServerMainNew;
 import User.User;
 import Server.GameManager;
-import Server.ClientHandler;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -35,21 +34,26 @@ public class Lobby implements Serializable {
     public boolean addUser(User user, int listener) {
         if (users.size() < maxUsers) {
             users.add(user);
-            listenersIDs.add(listener);
-            notifyListeners();
             return true;
         } else {
             return false;
         }
     }
 
-    public void removePlayer(User user, int listener) {
+    public void addListener(int listener) {
+        listenersIDs.add(listener);
+    }
+
+    public boolean removePlayer(User user) {
         boolean removed = users.remove(user);
-        listenersIDs.remove(listener);
-        notifyListeners();
         if (removed && user.equals(owner)) {
             changeOwner();
         }
+        return removed;
+    }
+
+    public void removeListener(int listener) {
+        listenersIDs.remove(listener);
     }
 
     public void notifyListeners() {
