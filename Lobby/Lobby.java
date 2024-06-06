@@ -11,7 +11,7 @@ import java.util.HashMap;
 
 public class Lobby implements Serializable {
     private static final long serialVersionUID = 1332257598815134L;
-    private ArrayList<User> users;
+    private HashMap<String, User> users;
     private ArrayList<Integer> listenersIDs;
     private User owner;
     private String lobbyName;
@@ -23,17 +23,17 @@ public class Lobby implements Serializable {
         this.owner = owner;
         this.lobbyName = lobbyName;
         this.maxUsers = maxUsers;
-        this.users = new ArrayList<>();
+        this.users = new HashMap<String, User>();
         this.listenersIDs = new ArrayList<>();
         this.gameStarted = false;
         this.gameManager = null;
-        users.add(owner);
+        users.put(owner.getLogin(), owner);
         listenersIDs.add(listenerID);
     }
 
-    public boolean addUser(User user, int listener) {
+    public boolean addUser(User user) {
         if (users.size() < maxUsers) {
-            users.add(user);
+            users.put(user.getLogin(), user);
             return true;
         } else {
             return false;
@@ -45,15 +45,17 @@ public class Lobby implements Serializable {
     }
 
     public boolean removePlayer(User user) {
-        boolean removed = users.remove(user);
-        if (removed && user.equals(owner)) {
+        User removedUser = users.remove(user.getLogin());
+        if (removedUser == null) return false;
+
+        if (user.getLogin().equals(owner.getLogin())) {
             changeOwner();
         }
-        return removed;
+        return true;
     }
 
     public void removeListener(int listener) {
-        listenersIDs.remove(listener);
+        listenersIDs.remove((Integer) listener);
     }
 
     public void notifyListeners() {
@@ -66,7 +68,8 @@ public class Lobby implements Serializable {
         if (users.isEmpty()) {
             owner = null; // No owner if there are no players
         } else {
-            owner = users.getFirst(); // Set the next player as the new owner
+            // get the first element in hashmap
+            owner = users.get(users.keySet().iterator().next());
         }
     }
 
@@ -75,7 +78,7 @@ public class Lobby implements Serializable {
     }
 
     public ArrayList<User> getUsers() {
-        return users;
+        return new ArrayList<>(users.values());
     }
 
     public User getOwner() {

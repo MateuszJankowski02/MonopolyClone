@@ -166,7 +166,7 @@ public class ClientHandler implements Runnable {
                 dataOut.writeBoolean(false);
                 return;
             }
-            boolean response = lobby.addUser(joiningUser, ClientID);
+            boolean response = lobby.addUser(joiningUser);
 
             dataOut.writeBoolean(response);
             if (!response) return;
@@ -232,6 +232,10 @@ public class ClientHandler implements Runnable {
             String leavingUserLogin = dataIn.readUTF();
             User leavingUser = ServerMainNew.users.getUserByLogin(leavingUserLogin);
             Lobby lobby = ServerMainNew.lobbies.getLobbyByName(lobbyName);
+
+            System.out.println("\n");
+            System.out.println("Current lobby:" + lobby.getLobbyName());
+            System.out.println("Leaving user: " + leavingUser.getNickname());
 
             if (lobby == null) {
                 System.out.println("Lobby not found");

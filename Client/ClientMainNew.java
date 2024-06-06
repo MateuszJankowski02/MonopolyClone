@@ -512,6 +512,9 @@ public class ClientMainNew extends Application {
 
                         dataOut.writeUTF(currentLobbyName);
                         dataOut.writeUTF(currentUserLogin);
+                        System.out.println("\n");
+                        System.out.println("Current lobby: " + currentLobbyName);
+                        System.out.println("Leaving user: " + currentUserLogin);
 
                         boolean removedSuccess = dataIn.readBoolean();
                         if (!removedSuccess){

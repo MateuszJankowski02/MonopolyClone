@@ -7,11 +7,12 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
 import java.util.Vector;
 
 public class ServerMainNew {
     final static int PORT = 8080;
-    static public Vector<ClientHandler> clients = new Vector<>();
+    static public HashMap<Integer, ClientHandler> clients = new HashMap<>();
     static public Lobby.Lobbies lobbies = new Lobby.Lobbies();
     static public User.Users users = new User.Users();
     static int i = 0;
@@ -38,7 +39,7 @@ public class ServerMainNew {
 
                 System.out.println("Adding this client to active client list");
 
-                clients.add(client);
+                clients.put(i ,client);
 
                 thread.start();
 
@@ -52,11 +53,8 @@ public class ServerMainNew {
     public static void notifyClient(int clientID, Lobby lobby){
         //display users
         lobby.getUsers().forEach(user -> System.out.println("TEST2 " + user.getNickname()));
-        for (ClientHandler client : clients) {
-            if (client.getClientID() == clientID) {
-                client.notifyListenersRefreshLobbyUsers(lobby);
-                break;
-            }
-        }
+
+        //notify client
+        clients.get(clientID).notifyListenersRefreshLobbyUsers(lobby);
     }
 }
