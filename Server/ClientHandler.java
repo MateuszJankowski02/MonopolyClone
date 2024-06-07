@@ -90,6 +90,15 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    public void notifyListenersStartGame(){
+        try{
+            dataOut.writeUTF("startGame");
+            dataOut.flush();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     interface Command {
         void execute(DataInputStream dataIn, DataOutputStream dataOut, int clientID) throws IOException;
@@ -261,7 +270,12 @@ public class ClientHandler implements Runnable {
     public static class StartGameCommand implements Command {
         @Override
         public void execute(DataInputStream dataIn, DataOutputStream dataOut, int ClientID) throws IOException {
+            String lobbyName = dataIn.readUTF();
+            String ownerLogin = dataIn.readUTF();
+            User user = ServerMainNew.users.getUserByLogin(ownerLogin);
+            Lobby lobby = ServerMainNew.lobbies.getLobbyByName(lobbyName);
 
+            boolean success  = lobby.startGame();
         }
     }
 

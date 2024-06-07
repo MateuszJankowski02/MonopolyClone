@@ -17,7 +17,6 @@ public class Lobby implements Serializable {
     private String lobbyName;
     private int maxUsers;
     private GameManager gameManager;
-    private boolean gameStarted;
 
     public Lobby(User owner, int listenerID, String lobbyName, int maxUsers) {
         this.owner = owner;
@@ -25,10 +24,20 @@ public class Lobby implements Serializable {
         this.maxUsers = maxUsers;
         this.users = new HashMap<String, User>();
         this.listenersIDs = new ArrayList<>();
-        this.gameStarted = false;
         this.gameManager = null;
         users.put(owner.getLogin(), owner);
         listenersIDs.add(listenerID);
+    }
+
+    public boolean startGame(){
+        ArrayList<String> usersLogins = new ArrayList<>(users.keySet());
+        try {
+            gameManager = new GameManager(usersLogins);
+            return true;
+        } catch (IllegalArgumentException e){
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public boolean addUser(User user) {
@@ -93,13 +102,6 @@ public class Lobby implements Serializable {
         return maxUsers;
     }
 
-    public boolean isGameStarted() {
-        return gameStarted;
-    }
-
-    public void setGameStarted(boolean gameStarted) {
-        this.gameStarted = gameStarted;
-    }
     public void setGameManager(GameManager gameManager) {
         this.gameManager = gameManager;
     }

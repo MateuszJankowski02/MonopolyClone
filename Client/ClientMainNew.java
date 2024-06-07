@@ -2,9 +2,11 @@ package Client;
 
 import javafx.application.Platform;
 import javafx.event.EventHandler;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 import javafx.application.Application;
 
@@ -14,8 +16,6 @@ import java.io.DataOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
-
-import User.User;
 
 
 public class ClientMainNew extends Application {
@@ -63,6 +63,12 @@ public class ClientMainNew extends Application {
         // Lobby scene
         LobbyLayout lobbyLayout = new LobbyLayout();
         Scene lobbyScene = new Scene(lobbyLayout, 300, 200);
+
+        // Game scene
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/monopoly.fxml"));
+        AnchorPane root = loader.load();
+        GameController controller = loader.getController();
+        Scene gameScene = new Scene(root);
 
         primaryStage.setScene(loginScene);
         primaryStage.setTitle("Client");
@@ -497,7 +503,28 @@ public class ClientMainNew extends Application {
 
         // Lobby scene - Start game button
         lobbyLayout.getStartGameButton().setOnAction(e -> {
-            // to be implemented
+            Thread startGameThread = new Thread(new Runnable(){
+                @Override
+                public void run() {
+                    try {
+                        dataOut.writeUTF("startGame");
+                        dataOut.writeUTF(currentLobbyName);
+                        dataOut.writeUTF(currentUserLogin);
+                        dataOut.flush();
+
+                        boolean response = dataIn.readBoolean();
+
+
+
+
+
+
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            });
+            startGameThread.start();
         });
 
         // Lobby scene - Leave lobby button
@@ -543,19 +570,22 @@ public class ClientMainNew extends Application {
             leaveLobbyThread.start();
         });
 
-        // When client shuts down unexpectedly logout user
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            public void run() {
-                try {
-                    dataOut.writeUTF("exit");
-                    if(!dataIn.readBoolean()) return;
-                    dataOut.writeUTF(currentUserLogin);
-                    dataOut.flush();
-                    socket.close();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
+        // Logout client on program termination
+        primaryStage.setOnCloseRequest(e -> {
+            Thread exitThread = new Thread(new Runnable(){
+                @Override
+                public void run() {
+                    try {
+                        dataOut.writeUTF("exit");
+                        dataOut.writeUTF(currentUserLogin);
+                        dataOut.flush();
+                        socket.close();
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
                 }
-            }
+            });
+            exitThread.start();
         });
     }
 
@@ -581,7 +611,9 @@ public class ClientMainNew extends Application {
                                 lobbyLayout.clearUsers();
                                 listOfUsers.forEach(lobbyLayout::addUser);
                             });
-                        } else if (command.equals("stopListener")) {
+                        } else if(command.equals("startGame")) {
+
+                        }else if (command.equals("stopListener")) {
                             break;
                         }
                     }

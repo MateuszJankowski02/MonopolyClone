@@ -9,6 +9,7 @@ import java.io.Serializable;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -24,55 +25,35 @@ import javafx.scene.control.Label;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 
-public class GameManager implements Serializable {
+public class GameManager {
+
+    /*
+    start game ->
+    notify listeners that game started ->
+    start new GameManager for chosen lobby ->
+    create 'game scene' for all clients in the lobby that gets data from thats lobbys GameManager
+     */
 
     private static GameManager instance;
-    private static final long serialVersionUID = 123812731287345L;
     private static int gameID = 0;
-    private ArrayList<Player> players;
-    private ArrayList<Board> boardSpaces = new ArrayList<>();
-    private ArrayList<StreetSet> streetSets = new ArrayList<>();
+    private HashMap<String, Player> players;
+    private ArrayList<Board> boardSpaces;
+    private ArrayList<StreetSet> streetSets;
     private int currentPlayerIndex = 0;
-
-    @FXML
-    private Button rollDiceButton;
-    @FXML
-    private Button endTurnButton;
-    @FXML
-    private Label currentPlayerLabel;
-    @FXML
-    private Label currentRollAmountLabel;
-    @FXML
-    private Label playerOneLabel;
-    @FXML
-    private Label playerTwoLabel;
-    @FXML
-    private Label playerThreeLabel;
-    @FXML
-    private Label playerFourLabel;
-    @FXML
-    private Circle playerOnePieceExample;
-    @FXML
-    private Circle playerTwoPieceExample;
-    @FXML
-    private Circle playerThreePieceExample;
-    @FXML
-    private Circle playerFourPieceExample;
-    @FXML
-    private Circle playerOnePiece;
-    @FXML
-    private Circle playerTwoPiece;
-    @FXML
-    private Circle playerThreePiece;
-    @FXML
-    private Circle playerFourPiece;
 
     private GameManager() {
     }
 
-    public GameManager(ArrayList<Player> players) {
+    public GameManager(ArrayList<String> usersLogins) {
+        this.players = new HashMap<>();
+        this.boardSpaces = new ArrayList<>();
+        this.streetSets = new ArrayList<>();
+
+        for(String login : usersLogins){
+            players.put(login, new Player());
+        }
         if (players.size() < 2 || players.size() > 4) throw new IllegalArgumentException("Invalid number of players");
-        this.players = players;
+
         gameID++;
     }
 
@@ -87,20 +68,6 @@ public class GameManager implements Serializable {
         currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
         System.out.println("Current player: " + players.get(currentPlayerIndex).getName());
         //updateButtonStates();
-    }
-
-    @FXML
-    private void rollDiceButtonOnAction(){
-        getCurrentPlayer().rollDice();
-        int roll = getCurrentPlayer().getCurrentRoll();
-        currentRollAmountLabel.setText(Integer.toString(roll));
-    }
-
-    @FXML
-    private void endTurnButtonOnAction(){
-        getCurrentPlayer().endTurn();
-        nextTurn();
-        currentPlayerLabel.setText(players.get(currentPlayerIndex).getName());
     }
 
     public Player getCurrentPlayer() {

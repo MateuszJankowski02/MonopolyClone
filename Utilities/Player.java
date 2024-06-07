@@ -10,7 +10,6 @@ public class Player implements Serializable {
     private static final long serialVersionUID = 947327287353485L;
     private static int idCounter = 0;
     private int id;
-    private User user;
     private int money;
     private int currentSpace;
     private String color;
@@ -24,9 +23,8 @@ public class Player implements Serializable {
     private boolean hisTurn;
     private ArrayList<BoardSpaceStreet> properties = new ArrayList<>();
 
-    public Player(User user) {
+    public Player() {
         this.id = idCounter++;
-        this.user = user;
         this.money = 1500;
         this.currentSpace = 0;
         switch (id) {
@@ -111,14 +109,6 @@ public class Player implements Serializable {
     public void endTurn() {
         hisTurn = false;
         canRoll = true;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public String getName(){
-        return user.getNickname();
     }
 
     public int getMoney() {
