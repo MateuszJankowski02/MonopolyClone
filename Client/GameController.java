@@ -5,6 +5,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.shape.Circle;
 
+import java.util.ArrayList;
+
 public class GameController {
 
     @FXML
@@ -52,22 +54,69 @@ public class GameController {
     private void endTurnButtonOnAction(){
     }
 
-    public void setVisiblePlayers(int amountOfPlayers){
+    public void setPlayerLabels(ArrayList<String> userNicknames){
+        int amountOfPlayers = userNicknames.size();
         switch (amountOfPlayers){
             case 2:
                 playerOneLabel.setVisible(true);
+                playerOneLabel.setText(userNicknames.get(0));
                 playerOnePiece.setVisible(true);            
                 playerOnePieceExample.setVisible(true);
 
                 playerTwoLabel.setVisible(true);
+                playerTwoLabel.setText(userNicknames.get(1));
                 playerTwoPiece.setVisible(true);
                 playerTwoPieceExample.setVisible(true);
 
+                playerThreeLabel.setVisible(false);
+                playerThreePiece.setVisible(false);
+                playerThreePieceExample.setVisible(false);
+
+                playerFourLabel.setVisible(false);
+                playerFourPiece.setVisible(false);
+                playerFourPieceExample.setVisible(false);
 
                 break;
             case 3:
+                playerOneLabel.setVisible(true);
+                playerOneLabel.setText(userNicknames.get(0));
+                playerOnePiece.setVisible(true);
+                playerOnePieceExample.setVisible(true);
+
+                playerTwoLabel.setVisible(true);
+                playerTwoLabel.setText(userNicknames.get(1));
+                playerTwoPiece.setVisible(true);
+                playerTwoPieceExample.setVisible(true);
+
+                playerThreeLabel.setVisible(true);
+                playerThreeLabel.setText(userNicknames.get(2));
+                playerThreePiece.setVisible(true);
+                playerThreePieceExample.setVisible(true);
+
+                playerFourLabel.setVisible(false);
+                playerFourPiece.setVisible(false);
+                playerFourPieceExample.setVisible(false);
                 break;
             case 4:
+                playerOneLabel.setVisible(true);
+                playerOneLabel.setText(userNicknames.get(0));
+                playerOnePiece.setVisible(true);
+                playerOnePieceExample.setVisible(true);
+
+                playerTwoLabel.setVisible(true);
+                playerTwoLabel.setText(userNicknames.get(1));
+                playerTwoPiece.setVisible(true);
+                playerTwoPieceExample.setVisible(true);
+
+                playerThreeLabel.setVisible(true);
+                playerThreeLabel.setText(userNicknames.get(2));
+                playerThreePiece.setVisible(true);
+                playerThreePieceExample.setVisible(true);
+
+                playerFourLabel.setVisible(true);
+                playerFourLabel.setText(userNicknames.get(3));
+                playerFourPiece.setVisible(true);
+                playerFourPieceExample.setVisible(true);
                 break;
             default:
                 System.out.println("INVALID AMOUNT OF PLAYERS");
@@ -137,67 +186,11 @@ public class GameController {
         return playerFourPiece;
     }
 
-    public void setRollDiceButton(Button rollDiceButton) {
-        this.rollDiceButton = rollDiceButton;
+    public void setCurrentPlayerLabelValue(String currentPlayer){
+        currentPlayerLabel.setText(currentPlayer);
     }
 
-    public void setEndTurnButton(Button endTurnButton) {
-        this.endTurnButton = endTurnButton;
-    }
-
-    public void setCurrentPlayerLabel(Label currentPlayerLabel) {
-        this.currentPlayerLabel = currentPlayerLabel;
-    }
-
-    public void setCurrentRollAmountLabel(Label currentRollAmountLabel) {
-        this.currentRollAmountLabel = currentRollAmountLabel;
-    }
-
-    public void setPlayerOneLabel(Label playerOneLabel) {
-        this.playerOneLabel = playerOneLabel;
-    }
-
-    public void setPlayerTwoLabel(Label playerTwoLabel) {
-        this.playerTwoLabel = playerTwoLabel;
-    }
-
-    public void setPlayerThreeLabel(Label playerThreeLabel) {
-        this.playerThreeLabel = playerThreeLabel;
-    }
-
-    public void setPlayerFourLabel(Label playerFourLabel) {
-        this.playerFourLabel = playerFourLabel;
-    }
-
-    public void setPlayerOnePieceExample(Circle playerOnePieceExample) {
-        this.playerOnePieceExample = playerOnePieceExample;
-    }
-
-    public void setPlayerTwoPieceExample(Circle playerTwoPieceExample) {
-        this.playerTwoPieceExample = playerTwoPieceExample;
-    }
-
-    public void setPlayerThreePieceExample(Circle playerThreePieceExample) {
-        this.playerThreePieceExample = playerThreePieceExample;
-    }
-
-    public void setPlayerFourPieceExample(Circle playerFourPieceExample) {
-        this.playerFourPieceExample = playerFourPieceExample;
-    }
-
-    public void setPlayerOnePiece(Circle playerOnePiece) {
-        this.playerOnePiece = playerOnePiece;
-    }
-
-    public void setPlayerTwoPiece(Circle playerTwoPiece) {
-        this.playerTwoPiece = playerTwoPiece;
-    }
-
-    public void setPlayerThreePiece(Circle playerThreePiece) {
-        this.playerThreePiece = playerThreePiece;
-    }
-
-    public void setPlayerFourPiece(Circle playerFourPiece) {
-        this.playerFourPiece = playerFourPiece;
+    public void setCurrentRollAmountLabelValue(int currentRollAmount){
+        currentRollAmountLabel.setText(String.valueOf(currentRollAmount));
     }
 }

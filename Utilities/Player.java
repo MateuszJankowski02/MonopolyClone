@@ -2,92 +2,78 @@ package Utilities;
 
 import BoardSpaces.BoardSpaceStreet;
 import User.User;
+import javafx.util.Pair;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 
-public class Player implements Serializable {
-    private static final long serialVersionUID = 947327287353485L;
+public class Player {
     private static int idCounter = 0;
-    private int id;
     private int money;
     private int currentSpace;
-    private String color;
     private boolean inJail;
     private int turnsInJail;
     private int jailCards;
     private boolean bankrupt;
-    private boolean canRoll;
     private int doublesRolled;
     private int currentRoll;
-    private boolean hisTurn;
+    private boolean hasRolled;
     private ArrayList<BoardSpaceStreet> properties = new ArrayList<>();
 
     public Player() {
-        this.id = idCounter++;
         this.money = 1500;
         this.currentSpace = 0;
-        switch (id) {
-            case 0:
-                this.color = "RED";
-                break;
-            case 1:
-                this.color = "BLUE";
-                break;
-            case 2:
-                this.color = "GREEN";
-                break;
-            case 3:
-                this.color = "YELLOW";
-                break;
-            default:
-                this.color = "BLACK";
-        }
         this.inJail = false;
         this.turnsInJail = 0;
         this.jailCards = 0;
         this.bankrupt = false;
-        this.canRoll = true;
         this.doublesRolled = 0;
         this.currentRoll = 0;
-        this.hisTurn = id == 0;
+        this.hasRolled = false;
     }
 
     private void addMoney(int amount) {
         money += amount;
     }
 
-    public void rollDice() {
-        if (!canRoll || !hisTurn) return;
+    public Pair<Integer, Integer> rollDice() {
         int die1 = (int) (Math.random() * 6) + 1;
         int die2 = (int) (Math.random() * 6) + 1;
-        currentRoll = die1 + die2;
-        if (die1 == die2) {
-            doublesRolled++;
-        } else {
-            canRoll = false;
-        }
+        Pair<Integer, Integer> currentRoll = new Pair<>(die1, die2);
 
-        if (doublesRolled == 3) {
-            goToJail();
-        } else {
-            moveAmountRolled(currentRoll);
-        }
-
-        if(inJail && die1 == die2){
-            inJail = false;
-            turnsInJail = 0;
-        }
-        if (!inJail) {
-            moveAmountRolled(currentRoll);
-        }else{
-            turnsInJail++;
-            if(turnsInJail == 3){
+        if(inJail){
+            if(die1 == die2){
+                inJail = false;
+                turnsInJail = 0;
+                moveAmountRolled(die1 + die2);
+                return currentRoll;
+            }
+            if (turnsInJail == 3) {
                 addMoney(-50);
                 inJail = false;
                 turnsInJail = 0;
+                moveAmountRolled(die1 + die2);
+                return currentRoll;
             }
+            turnsInJail++;
+            return currentRoll;
         }
+
+        if (die1 == die2) {
+            doublesRolled++;
+        } else {
+            hasRolled = true;
+            doublesRolled = 0;
+        }
+
+        if (doublesRolled >= 3) {
+            goToJail();
+            return currentRoll;
+        }
+
+        moveAmountRolled(die1 + die2);
+
+        return currentRoll;
     }
 
     private void goToJail() {
@@ -98,17 +84,12 @@ public class Player implements Serializable {
 
     private void moveAmountRolled(int diceRoll) {
         int nextSpace = currentSpace + diceRoll;
-        if (nextSpace > 40) {
-            currentSpace %= diceRoll;
+        if (nextSpace >= 40) {
             addMoney(200);
+            currentSpace = nextSpace - 39;
         }else {
             currentSpace = nextSpace;
         }
-    }
-
-    public void endTurn() {
-        hisTurn = false;
-        canRoll = true;
     }
 
     public int getMoney() {
@@ -117,10 +98,6 @@ public class Player implements Serializable {
 
     public int getCurrentSpace() {
         return currentSpace;
-    }
-
-    public String getColor() {
-        return color;
     }
 
     public boolean isInJail() {
@@ -139,10 +116,6 @@ public class Player implements Serializable {
         return bankrupt;
     }
 
-    public boolean canRoll() {
-        return canRoll;
-    }
-
     public int getDoublesRolled() {
         return doublesRolled;
     }
@@ -151,5 +124,11 @@ public class Player implements Serializable {
         return currentRoll;
     }
 
+    public boolean hasRolled() {
+        return hasRolled;
+    }
 
+    public void setHasRolled(boolean hasRolled) {
+        this.hasRolled = hasRolled;
+    }
 }

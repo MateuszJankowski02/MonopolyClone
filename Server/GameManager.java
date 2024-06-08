@@ -1,29 +1,13 @@
 package Server;
 
 import BoardSpaces.*;
-import Client.ClientMainNew;
 import Utilities.Player;
+import javafx.util.Pair;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.ResourceBundle;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
-import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.fxml.Initializable;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.shape.Circle;
-import javafx.stage.Stage;
 
 public class GameManager {
 
@@ -34,15 +18,12 @@ public class GameManager {
     create 'game scene' for all clients in the lobby that gets data from thats lobbys GameManager
      */
 
-    private static GameManager instance;
     private static int gameID = 0;
     private HashMap<String, Player> players;
     private ArrayList<Board> boardSpaces;
     private ArrayList<StreetSet> streetSets;
-    private int currentPlayerIndex = 0;
-
-    private GameManager() {
-    }
+    private String currentPlayerLogin;
+    private Player currentPlayer;
 
     public GameManager(ArrayList<String> usersLogins) {
         this.players = new HashMap<>();
@@ -54,27 +35,38 @@ public class GameManager {
         }
         if (players.size() < 2 || players.size() > 4) throw new IllegalArgumentException("Invalid number of players");
 
+        //random number from 0 to players.size() - 1
+        int randomPlayer = (int) (Math.random() * players.size());
+
+        currentPlayerLogin = usersLogins.get(randomPlayer);
+        currentPlayer = players.get(currentPlayerLogin);
+
         gameID++;
     }
 
-    public static GameManager getInstance() {
-        if (instance == null) {
-            instance = new GameManager();
-        }
-        return instance;
-    }
+    public boolean nextTurn() {
+        if (!currentPlayer.hasRolled()) return false;
 
-    public void nextTurn() {
-        currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
-        System.out.println("Current player: " + players.get(currentPlayerIndex).getName());
-        //updateButtonStates();
+        ArrayList<String> playerLogins = new ArrayList<>(players.keySet());
+        int currentIndex = playerLogins.indexOf(currentPlayerLogin);
+        int nextIndex = (currentIndex + 1) % playerLogins.size();
+
+        currentPlayerLogin = playerLogins.get(nextIndex);
+        currentPlayer = players.get(currentPlayerLogin);
+
+        System.out.println("Current player: " + currentPlayerLogin);
+        return true;
     }
 
     public Player getCurrentPlayer() {
-        return players.get(currentPlayerIndex);
+        return players.get(currentPlayerLogin);
     }
 
-    public ArrayList<Player> getPlayers() {
+    public String getCurrentPlayerLogin() {
+        return currentPlayerLogin;
+    }
+
+    public HashMap<String, Player> getPlayers() {
         return players;
     }
 
@@ -364,69 +356,13 @@ public class GameManager {
         ));
     }
 
-    public void populateBoard() {
+    public void startGame() {
         populateStreets();
         populateSpaces();
-    }
-
-    public void startGame() {
-        populateBoard();
     }
 
     public int getGameID() {
         return gameID;
     }
 
-
-    public void initializeGameUI(Stage primaryStage) throws IOException {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/monopoly.fxml"));
-        loader.setController(this);  // Ensure the current instance is used as the controller
-        Parent root = loader.load();
-
-        Scene scene = new Scene(root);
-        primaryStage.setScene(scene);
-        primaryStage.setTitle("Game Manager");
-        primaryStage.show();
-    }
-
-    @FXML
-    private void initialize() {
-        startGame();
-        System.out.println("GameManager controller initialized");
-        currentPlayerLabel.setText(players.get(0).getName());
-        currentRollAmountLabel.setText("None");
-        //updateButtonStates(); // Initialize button states based on the current player
-
-        if (players.size() == 2) {
-            playerOneLabel.setText(players.get(0).getName());
-            playerTwoLabel.setText(players.get(1).getName());
-            playerThreeLabel.setVisible(false);
-            playerFourLabel.setVisible(false);
-            playerThreePiece.setVisible(false);
-            playerThreePieceExample.setVisible(false);
-            playerFourPiece.setVisible(false);
-            playerFourPieceExample.setVisible(false);
-        } else if (players.size() == 3) {
-            playerOneLabel.setText(players.get(0).getName());
-            playerTwoLabel.setText(players.get(1).getName());
-            playerThreeLabel.setText(players.get(2).getName());
-            playerFourLabel.setVisible(false);
-            playerFourPiece.setVisible(false);
-            playerFourPieceExample.setVisible(false);
-        } else {
-            playerOneLabel.setText(players.get(0).getName());
-            playerTwoLabel.setText(players.get(1).getName());
-            playerThreeLabel.setText(players.get(2).getName());
-            playerFourLabel.setText(players.get(3).getName());
-        }
-    }
-
-    /*
-    private void updateButtonStates() {
-        boolean isCurrentPlayer = getCurrentPlayer().getUser().equals(ClientMainNew.currentUser);
-        rollDiceButton.setDisable(!isCurrentPlayer);
-        endTurnButton.setDisable(!isCurrentPlayer);
-    }
-
-     */
 }

@@ -17,6 +17,7 @@ public class Lobby implements Serializable {
     private String lobbyName;
     private int maxUsers;
     private GameManager gameManager;
+    private boolean isGameStarted;
 
     public Lobby(User owner, int listenerID, String lobbyName, int maxUsers) {
         this.owner = owner;
@@ -25,6 +26,7 @@ public class Lobby implements Serializable {
         this.users = new HashMap<String, User>();
         this.listenersIDs = new ArrayList<>();
         this.gameManager = null;
+        this.isGameStarted = false;
         users.put(owner.getLogin(), owner);
         listenersIDs.add(listenerID);
     }
@@ -33,6 +35,7 @@ public class Lobby implements Serializable {
         ArrayList<String> usersLogins = new ArrayList<>(users.keySet());
         try {
             gameManager = new GameManager(usersLogins);
+            isGameStarted = true;
             return true;
         } catch (IllegalArgumentException e){
             e.printStackTrace();
@@ -67,10 +70,12 @@ public class Lobby implements Serializable {
         listenersIDs.remove((Integer) listener);
     }
 
-    public void notifyListeners() {
-        for (int listenerID : listenersIDs) {
-            ServerMainNew.notifyClient(listenerID, this);
-        }
+    public ArrayList<Integer> getListenersIDs() {
+        return listenersIDs;
+    }
+
+    public ArrayList<Integer> getListenersIDsCopy() {
+        return new ArrayList<>(listenersIDs);
     }
 
     private void changeOwner() {
@@ -86,12 +91,16 @@ public class Lobby implements Serializable {
         return users.isEmpty();
     }
 
-    public ArrayList<User> getUsers() {
+    public ArrayList<User> getUsersArray() {
         return new ArrayList<>(users.values());
     }
 
-    public User getOwner() {
-        return owner;
+    public HashMap<String, User> getUsers() {
+        return users;
+    }
+
+    public String getOwnerLogin() {
+        return owner.getLogin();
     }
 
     public String getLobbyName() {
@@ -108,6 +117,11 @@ public class Lobby implements Serializable {
 
     public GameManager getGameManager() {
         return gameManager;
+    }
+
+    @Override
+    public String toString() {
+        return "Name: " + lobbyName + ", Owner: " + owner.getNickname() + ", Players: " + users.size() + "/" + maxUsers + ", Game started: " + isGameStarted;
     }
 
     static public class Lobbies {
@@ -140,9 +154,11 @@ public class Lobby implements Serializable {
         }
 
         public ArrayList<String> getLobbiesList() {
-            return new ArrayList<>(lobbies.keySet());
+            ArrayList<String> lobbiesList = new ArrayList<>();
+            for (Lobby lobby : lobbies.values()) {
+                lobbiesList.add(lobby.toString());
+            }
+            return lobbiesList;
         }
-
-
     }
 }

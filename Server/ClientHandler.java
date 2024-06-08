@@ -1,6 +1,7 @@
 package Server;
 
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -12,6 +13,7 @@ import java.util.Map;
 
 import User.User;
 import Lobby.Lobby;
+import javafx.util.Pair;
 
 public class ClientHandler implements Runnable {
 
@@ -35,10 +37,8 @@ public class ClientHandler implements Runnable {
     public void run() {
         String clientCommand;
         initializeCommands();
-        while (true)
-        {
-            try
-            {
+        while (true) {
+            try {
                 // receive the string with the command from the client
                 clientCommand = dataIn.readUTF();
                 System.out.println("Command received: " + clientCommand);
@@ -51,7 +51,7 @@ public class ClientHandler implements Runnable {
                     // execute the command
                     command.execute(dataIn, dataOut, clientID);
                 }
-            } catch (SocketException e) {
+            } catch (SocketException | EOFException e) {
                 System.out.println("Client " + clientID + " disconnected");
                 break;
             } catch (IOException e) {
@@ -67,18 +67,18 @@ public class ClientHandler implements Runnable {
         commandMap.put("listLobbies", new ListLobbiesCommand());
         commandMap.put("logout", new LogoutCommand());
         commandMap.put("exit", new ExitCommand());
-        commandMap.put("getLobbyPlayers", new GetLobbyPlayersCommand());
         commandMap.put("leaveLobby", new LeaveLobbyCommand());
         commandMap.put("startGame", new StartGameCommand());
-        commandMap.put("checkGameState", new CheckGameStateCommand());
-        commandMap.put("stopListener", new StopListenerCommand());
+        commandMap.put("stopLobbyListener", new StopLobbyListenerCommand());
+        commandMap.put("rollDice", new RollDiceCommand());
+        commandMap.put("endTurn", new EndTurnCommand());
     }
 
     public void notifyListenersRefreshLobbyUsers(Lobby lobby){
         try{
             System.out.println("Notifying listeners to refresh lobby users");
             ArrayList<String> listOfUsers = new ArrayList<>();
-            lobby.getUsers().forEach(user -> listOfUsers.add(user.getNickname()));
+            lobby.getUsersArray().forEach(user -> listOfUsers.add(user.getNickname()));
             dataOut.writeUTF("refreshLobbyUsers");
             dataOut.writeInt(listOfUsers.size());
             for (String user : listOfUsers){
@@ -90,9 +90,32 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    public void notifyListenersStartGame(){
+    public void notifyListenersStartGame(Lobby lobby){
         try{
+            System.out.println("Notifying listeners to start game");
+            ArrayList<String> listOfUsersNicknames = new ArrayList<>();
+            lobby.getUsersArray().forEach(user -> listOfUsersNicknames.add(user.getNickname()));
             dataOut.writeUTF("startGame");
+            dataOut.writeInt(listOfUsersNicknames.size());
+            for (String user : listOfUsersNicknames){
+                dataOut.writeUTF(user);
+            }
+            String currentPlayerLogin = lobby.getGameManager().getCurrentPlayerLogin();
+            String currentPlayerNickname = lobby.getUsers().get(currentPlayerLogin).getNickname();
+            dataOut.writeUTF(currentPlayerNickname);
+
+            dataOut.flush();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void notifyListenersNextTurn(Lobby lobby){
+        try{
+            dataOut.writeUTF("nextTurn");
+            String currentPlayerLogin = lobby.getGameManager().getCurrentPlayerLogin();
+            String currentPlayerNickname = lobby.getUsers().get(currentPlayerLogin).getNickname();
+            dataOut.writeUTF(currentPlayerNickname);
             dataOut.flush();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -121,6 +144,7 @@ public class ClientHandler implements Runnable {
                 return;
             }
             dataOut.writeBoolean(true);
+            dataOut.writeUTF(ServerMainNew.users.getUserByLogin(username).getNickname());
             dataOut.flush();
         }
     }
@@ -155,7 +179,7 @@ public class ClientHandler implements Runnable {
             Lobby createdLobby = ServerMainNew.lobbies.getLobbyByName(lobbyName);
             ArrayList<String> createdLobbyUsers = new ArrayList<>();
 
-            createdLobby.getUsers().forEach(user -> createdLobbyUsers.add(user.getNickname()));
+            createdLobby.getUsersArray().forEach(user -> createdLobbyUsers.add(user.getNickname()));
             dataOut.writeInt(createdLobbyUsers.size());
             for (String user : createdLobbyUsers){
                 dataOut.writeUTF(user);
@@ -179,11 +203,11 @@ public class ClientHandler implements Runnable {
 
             dataOut.writeBoolean(response);
             if (!response) return;
-            lobby.notifyListeners();
+            lobby.getListenersIDs().forEach(listenerID -> ServerMainNew.notifyClientToRefreshUsers(listenerID, lobby));
             lobby.addListener(ClientID);
 
             ArrayList<String> joinedLobbyUsers = new ArrayList<>();
-            lobby.getUsers().forEach(user -> joinedLobbyUsers.add(user.getNickname()));
+            lobby.getUsersArray().forEach(user -> joinedLobbyUsers.add(user.getNickname()));
             dataOut.writeInt(joinedLobbyUsers.size());
             for (String user : joinedLobbyUsers){
                 dataOut.writeUTF(user);
@@ -223,13 +247,7 @@ public class ClientHandler implements Runnable {
                 return;
             }
             ServerMainNew.users.logoutUser(user);
-        }
-    }
-
-    static class GetLobbyPlayersCommand implements Command {
-        @Override
-        public void execute(DataInputStream dataIn, DataOutputStream dataOut, int ClientID) throws IOException {
-
+            ServerMainNew.clients.remove(ClientID);
         }
     }
 
@@ -257,10 +275,10 @@ public class ClientHandler implements Runnable {
                 return;
             }
             lobby.removeListener(ClientID);
-            lobby.notifyListeners();
+            lobby.getListenersIDs().forEach(listenerID -> ServerMainNew.notifyClientToRefreshUsers(listenerID, lobby));
             dataOut.writeBoolean(true);
 
-            if (lobby.getUsers().isEmpty()){
+            if (lobby.getUsersArray().isEmpty()){
                 ServerMainNew.lobbies.removeLobby(lobbyName);
                 System.out.println("Removed lobby: " + lobbyName);
             }
@@ -275,21 +293,92 @@ public class ClientHandler implements Runnable {
             User user = ServerMainNew.users.getUserByLogin(ownerLogin);
             Lobby lobby = ServerMainNew.lobbies.getLobbyByName(lobbyName);
 
+            if (lobby == null) {
+                dataOut.writeUTF("noLobby");
+                return;
+            }
+            if (!lobby.getOwnerLogin().equals(user.getLogin())) {
+                dataOut.writeUTF("noOwner");
+                return;
+            }
+            if (lobby.getUsersArray().size() < 2) {
+                dataOut.writeUTF("noPlayers");
+                return;
+            }
+
             boolean success  = lobby.startGame();
+
+            if (!success){
+                dataOut.writeUTF("noSuccess");
+                return;
+            }
+            dataOut.writeUTF("success");
+
+            dataOut.writeInt(lobby.getUsersArray().size());
+            for (User u : lobby.getUsersArray()){
+                dataOut.writeUTF(u.getNickname());
+            }
+            String currentPlayerLogin = lobby.getGameManager().getCurrentPlayerLogin();
+            // get the current player's nickname
+            String currentPlayerNickname = lobby.getUsers().get(currentPlayerLogin).getNickname();
+            dataOut.writeUTF(currentPlayerNickname);
+
+            ArrayList<Integer> listOfListeners = lobby.getListenersIDsCopy();
+            listOfListeners.remove((Integer) ClientID);
+
+            listOfListeners.forEach(listenerID -> ServerMainNew.notifyClientGameStarted(listenerID, lobby));
         }
     }
 
-    public static class CheckGameStateCommand implements Command {
-        @Override
-        public void execute(DataInputStream dataIn, DataOutputStream dataOut, int ClientID) throws IOException {
-
-        }
-    }
-
-    public static class StopListenerCommand implements Command {
+    public static class StopLobbyListenerCommand implements Command {
         @Override
         public void execute(DataInputStream dataIn, DataOutputStream dataOut, int ClientID) throws IOException {
             dataOut.writeUTF("stopListener");
+        }
+    }
+
+    public static class RollDiceCommand implements Command {
+        @Override
+        public void execute(DataInputStream dataIn, DataOutputStream dataOut, int ClientID) throws IOException {
+            String lobbyName = dataIn.readUTF();
+
+            dataOut.writeUTF("rollDice");
+
+            Lobby lobby = ServerMainNew.lobbies.getLobbyByName(lobbyName);
+            Pair<Integer, Integer> currentRoll = lobby.getGameManager().getCurrentPlayer().rollDice();
+
+            boolean isInJail = lobby.getGameManager().getCurrentPlayer().isInJail();
+            int newSpace = lobby.getGameManager().getCurrentPlayer().getCurrentSpace();
+            dataOut.writeInt(currentRoll.getKey());
+            dataOut.writeInt(currentRoll.getValue());
+            dataOut.writeInt(newSpace);
+            dataOut.writeBoolean(isInJail);
+        }
+    }
+
+    public static class EndTurnCommand implements Command {
+        @Override
+        public void execute(DataInputStream dataIn, DataOutputStream dataOut, int ClientID) throws IOException {
+            String lobbyName = dataIn.readUTF();
+
+            dataOut.writeUTF("endTurn");
+
+            Lobby lobby = ServerMainNew.lobbies.getLobbyByName(lobbyName);
+
+            if(!lobby.getGameManager().nextTurn()) {
+                dataOut.writeBoolean(false);
+                return;
+            }
+            dataOut.writeBoolean(true);
+
+            String currentPlayerLogin = lobby.getGameManager().getCurrentPlayerLogin();
+            String currentPlayerNickname = lobby.getUsers().get(currentPlayerLogin).getNickname();
+            dataOut.writeUTF(currentPlayerNickname);
+
+            ArrayList<Integer> listOfListeners = lobby.getListenersIDsCopy();
+
+            listOfListeners.forEach(listenerID -> ServerMainNew.notifyClientNextTurn(listenerID, lobby));
+
         }
     }
 

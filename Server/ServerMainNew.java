@@ -49,11 +49,18 @@ public class ServerMainNew {
         }
     }
 
-    public static void notifyClient(int clientID, Lobby lobby){
-        //display users
-        lobby.getUsers().forEach(user -> System.out.println("TEST2 " + user.getNickname()));
-
+    public static void notifyClientToRefreshUsers(int clientID, Lobby lobby){
         //notify client
         clients.get(clientID).notifyListenersRefreshLobbyUsers(lobby);
+    }
+
+    public static void notifyClientGameStarted(int clientID, Lobby lobby){
+        //notify client
+        clients.get(clientID).notifyListenersStartGame(lobby);
+    }
+
+    public static void notifyClientNextTurn(int clientID, Lobby lobby){
+        //notify client
+        clients.get(clientID).notifyListenersNextTurn(lobby);
     }
 }
