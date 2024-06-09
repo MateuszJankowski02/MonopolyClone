@@ -13,6 +13,7 @@ import java.util.Map;
 
 import User.User;
 import Lobby.Lobby;
+import Utilities.Player;
 import javafx.util.Pair;
 
 public class ClientHandler implements Runnable {
@@ -364,6 +365,8 @@ public class ClientHandler implements Runnable {
             int currentPlayerID = lobby.getGameManager().getCurrentPlayer().getPlayerID();
             boolean isInJail = lobby.getGameManager().getCurrentPlayer().isInJail();
             int newSpace = lobby.getGameManager().getCurrentPlayer().getCurrentSpace();
+            Player currentPlayer = lobby.getGameManager().getCurrentPlayer();
+
             dataOut.writeInt(currentRoll.getKey());
             dataOut.writeInt(currentRoll.getValue());
             dataOut.writeDouble(newLocation.getKey());
@@ -376,6 +379,9 @@ public class ClientHandler implements Runnable {
             ArrayList<Integer> listOfListeners = lobby.getListenersIDsCopy();
 
             listOfListeners.forEach(listenerID -> ServerMainNew.notifyClientPlayerMoved(listenerID, newLocation, currentPlayerID));
+
+            handleEvent(dataIn, dataOut, lobby, currentPlayer, newSpace);
+
         }
     }
 
@@ -401,6 +407,67 @@ public class ClientHandler implements Runnable {
             ArrayList<Integer> listOfListeners = lobby.getListenersIDsCopy();
 
             listOfListeners.forEach(listenerID -> ServerMainNew.notifyClientNextTurn(listenerID, lobby));
+        }
+    }
+
+    public static void handleEvent(DataInputStream dataIn, DataOutputStream dataOut, Lobby lobby, Player currentPlayer,
+                                   int newSpace){
+        try {
+            dataOut.writeUTF("handleEvent");
+
+            Pair<String, Integer> handleEvent = lobby.getGameManager().handleEvent(newSpace ,currentPlayer);
+            String eventMessage = handleEvent.getKey();
+            int eventValue = handleEvent.getValue();
+
+            switch (eventMessage) {
+                case "buyStreet":
+                    dataOut.writeUTF("buyStreet");
+                    dataOut.writeInt(eventValue);
+                    break;
+                case "noBuyStreet":
+                    dataOut.writeUTF("noBuyStreet");
+                    break;
+                case "bankrupt":
+                    dataOut.writeUTF("bankrupt");
+                    break;
+                case "payRent":
+                    dataOut.writeUTF("payRent");
+                    dataOut.writeInt(eventValue);
+                    break;
+                case "ownProperty":
+                    dataOut.writeUTF("noPayRent");
+                    break;
+                case "buyRailroad":
+                    dataOut.writeUTF("buyRailroad");
+                    dataOut.writeInt(eventValue);
+                    break;
+                case "noBuyRailroad":
+                    dataOut.writeUTF("noBuyRailroad");
+                    break;
+                case "chest":
+                    dataOut.writeUTF("jail");
+                    break;
+                case "incomeTax":
+                    dataOut.writeUTF("incomeTax");
+                    dataOut.writeInt(eventValue);
+                    break;
+                case "luxuryTax":
+                    dataOut.writeUTF("luxuryTax");
+                    dataOut.writeInt(eventValue);
+                    break;
+                case "goToJail":
+                    dataOut.writeUTF("goToJail");
+                    break;
+                case "chance":
+                    dataOut.writeUTF("chance");
+                    break;
+                default:
+                    dataOut.writeUTF("noEvent");
+                    break;
+            }
+            dataOut.flush();
+        }catch (IOException e){
+            throw new RuntimeException(e);
         }
     }
 

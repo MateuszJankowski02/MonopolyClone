@@ -8,4 +8,20 @@ public class BoardSpaceEvent implements Board{
         this.boardSpace = boardSpace;
         this.spaceEventType = spaceEventType;
     }
+
+    public int getSpaceID() {
+        return boardSpace.getSpaceID();
+    }
+
+    public String getName() {
+        return boardSpace.getName();
+    }
+
+    public SpaceType getType() {
+        return boardSpace.getType();
+    }
+
+    public SpaceEventType getSpaceEventType() {
+        return spaceEventType;
+    }
 }

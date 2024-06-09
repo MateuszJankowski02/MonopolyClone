@@ -21,7 +21,7 @@ public class Player {
     private int currentRoll;
     private boolean hasRolled;
     private HashMap<Integer, Pair<Double,Double>> playerPieceLocations = new HashMap<>();
-    private ArrayList<BoardSpaceStreet> properties = new ArrayList<>();
+    private ArrayList<Integer> properties = new ArrayList<>();
 
     public Player(int amountOfPlayers) {
         this.money = 1500;
@@ -42,7 +42,7 @@ public class Player {
         playerPieceLocations = initializePlayerLocations(playerID);
     }
 
-    private void addMoney(int amount) {
+    public void addMoney(int amount) {
         money += amount;
     }
 
@@ -84,7 +84,7 @@ public class Player {
         return currentRoll;
     }
 
-    private void goToJail() {
+    public void goToJail() {
         inJail = true;
         currentSpace = 10;
         doublesRolled = 0;
@@ -99,6 +99,11 @@ public class Player {
             currentSpace = nextSpace;
         }
         return playerPieceLocations.get(currentSpace);
+    }
+
+    public void buyProperty(int propertyID, int propertyCost) {
+        addMoney(-propertyCost);
+        properties.add(propertyID);
     }
 
     public int getMoney() {

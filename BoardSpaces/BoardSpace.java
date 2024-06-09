@@ -11,5 +11,16 @@ public class BoardSpace implements Board{
         this.type = type;
     }
 
+    public int getSpaceID() {
+        return spaceID;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public SpaceType getType() {
+        return type;
+    }
 
 }

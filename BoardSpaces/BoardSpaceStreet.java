@@ -22,4 +22,56 @@ public class BoardSpaceStreet implements Board{
         this.houseCount = 0;
         this.owner = null;
     }
+
+    public int getSpaceID() {
+        return boardSpace.getSpaceID();
+    }
+
+    public String getName() {
+        return boardSpace.getName();
+    }
+
+    public SpaceType getType() {
+        return boardSpace.getType();
+    }
+
+    public StreetSet getStreetSet() {
+        return streetSet;
+    }
+
+    public int getHouseCost() {
+        return houseCost;
+    }
+
+    public int getBuyoutCost() {
+        return buyoutCost;
+    }
+
+    public int getRent() {
+        return rent.get(houseCount);
+    }
+
+    public int getHouseCount() {
+        return houseCount;
+    }
+
+    public Player getOwner() {
+        return owner;
+    }
+
+    public void setOwner(Player owner) {
+        this.owner = owner;
+    }
+
+    public void addHouse() {
+        houseCount++;
+    }
+
+    public void removeHouse() {
+        houseCount--;
+    }
+
+    public void resetHouses() {
+        houseCount = 0;
+    }
 }

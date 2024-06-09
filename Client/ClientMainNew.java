@@ -814,12 +814,12 @@ public class ClientMainNew extends Application {
                                 double locationY2 = playerPieceLocation2.getValue();
                                 int playerID2 = dataIn.readInt();
                                 int currentPlayerPosition = dataIn.readInt();
-                                boolean isInJail = dataIn.readBoolean();
+
 
                                 Platform.runLater(() -> {
                                     gameController.setCurrentRollAmountLabelValue(currentRoll.getKey() + currentRoll.getValue());
                                     gameController.getRollDiceButton().setDisable(!Objects.equals
-                                            (currentRoll.getKey(), currentRoll.getValue()) || isInJail);
+                                            (currentRoll.getKey(), currentRoll.getValue()));
                                     switch (playerID2) {
                                         case 0:
                                             gameController.getPlayerOnePiece().setLayoutX(locationX2);
@@ -841,7 +841,7 @@ public class ClientMainNew extends Application {
                                     Alert alert = new Alert(Alert.AlertType.INFORMATION);
                                     alert.setTitle("Dice roll");
                                     alert.setHeaderText("You rolled: " + dice1 + " and " + dice2 +
-                                            ". Moved to position: " + currentPlayerPosition);
+                                            ". Moved to position: " + currentPlayerPosition+1);
                                     alert.show();
                                 });
                                 break;

@@ -58,6 +58,109 @@ public class GameManager {
         return true;
     }
 
+    public Pair<String, Integer> handleSpaceEvent(int currentSpaceID, Player player) {
+        if (boardSpaces.get(player.getCurrentSpace()).getType() == SpaceType.STREET ||
+            boardSpaces.get(player.getCurrentSpace()).getType() == SpaceType.RAILROAD ||
+            boardSpaces.get(player.getCurrentSpace()).getType() == SpaceType.UTILITY) {
+
+            return handlePropertyEvent(currentSpaceID, player);
+        } else {
+            return handleEvent(currentSpaceID, player);
+        }
+    }
+
+    public Pair<String, Integer> handlePropertyEvent(int currentSpaceID, Player player) {
+        if (boardSpaces.get(currentSpaceID).getType() == SpaceType.STREET) {
+            BoardSpaceStreet street = (BoardSpaceStreet) boardSpaces.get(currentSpaceID);
+            if (street.getOwner() == null) {
+                if (player.getMoney() >= street.getBuyoutCost()) {
+                    player.buyProperty(currentSpaceID, street.getBuyoutCost());
+                    street.setOwner(player);
+                    return new Pair<>("buyStreet", street.getBuyoutCost());
+                } else {
+                    return new Pair<>("noBuyStreet", 0);
+                }
+            } else if (street.getOwner() != player) {
+                int rent = street.getRent();
+                player.addMoney(-rent);
+                street.getOwner().addMoney(rent);
+                if (player.getMoney() < 0) {
+                    return new Pair<>("bankrupt", 0);
+                }
+                return new Pair<>("payRent", rent);
+            } else {
+                return new Pair<>("ownProperty", 0);
+            }
+        } else if (boardSpaces.get(currentSpaceID).getType() == SpaceType.RAILROAD) {
+            BoardSpaceRailroad railroad = (BoardSpaceRailroad) boardSpaces.get(currentSpaceID);
+            if (railroad.getOwner() == null) {
+                if (player.getMoney() >= railroad.getBuyoutCost()) {
+                    player.buyProperty(currentSpaceID, railroad.getBuyoutCost());
+                    railroad.setOwner(player);
+                    return new Pair<>("buyRailroad", railroad.getBuyoutCost());
+                } else {
+                    return new Pair<>("noBuyRailroad", 0);
+                }
+            } else if (railroad.getOwner() != player) {
+                int rent = railroad.getRent();
+                player.addMoney(-rent);
+                railroad.getOwner().addMoney(rent);
+                if (player.getMoney() < 0) {
+                    return new Pair<>("bankrupt", 0);
+                }
+                return new Pair<>("payRent", rent);
+            } else {
+                return new Pair<>("ownProperty", 0);
+            }
+        } else {
+            BoardSpaceUtility utility = (BoardSpaceUtility) boardSpaces.get(currentSpaceID);
+            if (utility.getOwner() == null) {
+                if (player.getMoney() >= utility.getBuyoutCost()) {
+                    player.buyProperty(currentSpaceID, utility.getBuyoutCost());
+                    utility.setOwner(player);
+                    return new Pair<>("buyUtility", utility.getBuyoutCost());
+                } else {
+                    return new Pair<>("noBuyUtility", 0);
+                }
+            } else if (utility.getOwner() != player) {
+                int rent = utility.getRent(player.getCurrentRoll(), 0);
+                player.addMoney(-rent);
+                utility.getOwner().addMoney(rent);
+                if (player.getMoney() < 0) {
+                    return new Pair<>("bankrupt", 0);
+                }
+                return new Pair<>("payRent", rent);
+            } else {
+                return new Pair<>("ownProperty", 0);
+            }
+        }
+    }
+
+    public Pair<String, Integer> handleEvent(int currentSpaceID, Player player) {
+        if (boardSpaces.get(currentSpaceID).getType() == SpaceType.EVENT) {
+            BoardSpaceEvent event = (BoardSpaceEvent) boardSpaces.get(currentSpaceID);
+            switch (event.getSpaceEventType()) {
+                case CHEST:
+                    return new Pair<>("chest", 0);
+                case INCOME_TAX:
+                    player.addMoney(-60);
+                    return new Pair<>("incomeTax", 60);
+                case CHANCE:
+                    return new Pair<>("chance", 0);
+                case GO_TO_JAIL:
+                    player.goToJail();
+                    return new Pair<>("goToJail", 0);
+                case LUXURY_TAX:
+                    player.addMoney(-100);
+                    return new Pair<>("luxuryTax", 100);
+                default:
+                    return new Pair<>("error", 0);
+            }
+        } else {
+            return new Pair<>("error", 0);
+        }
+    }
+
     public Player getCurrentPlayer() {
         return players.get(currentPlayerLogin);
     }
