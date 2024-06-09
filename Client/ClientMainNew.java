@@ -742,6 +742,33 @@ public class ClientMainNew extends Application {
                                 });
 
                                 break;
+                            case "updatePlayerLocation":
+                                Pair<Double, Double> playerPieceLocation = new Pair<>(dataIn.readDouble(), dataIn.readDouble());
+                                double locationX = playerPieceLocation.getKey();
+                                double locationY = playerPieceLocation.getValue();
+                                int playerID = dataIn.readInt();
+
+                                Platform.runLater(() -> {
+                                    switch (playerID) {
+                                        case 0:
+                                            gameController.getPlayerOnePiece().setLayoutX(locationX);
+                                            gameController.getPlayerOnePiece().setLayoutY(locationY);
+                                            break;
+                                        case 1:
+                                            gameController.getPlayerTwoPiece().setLayoutX(locationX);
+                                            gameController.getPlayerTwoPiece().setLayoutY(locationY);
+                                            break;
+                                        case 2:
+                                            gameController.getPlayerThreePiece().setLayoutX(locationX);
+                                            gameController.getPlayerThreePiece().setLayoutY(locationY);
+                                            break;
+                                        case 3:
+                                            gameController.getPlayerFourPiece().setLayoutX(locationX);
+                                            gameController.getPlayerFourPiece().setLayoutY(locationY);
+                                            break;
+                                    }
+                                });
+                                break;
                             case "endTurn":
                                 boolean response = dataIn.readBoolean();
                                 if (!response) {
@@ -782,6 +809,10 @@ public class ClientMainNew extends Application {
                                 Pair<Integer, Integer> currentRoll = new Pair<>(dataIn.readInt(), dataIn.readInt());
                                 int dice1 = currentRoll.getKey();
                                 int dice2 = currentRoll.getValue();
+                                Pair<Double, Double> playerPieceLocation2 = new Pair<>(dataIn.readDouble(), dataIn.readDouble());
+                                double locationX2 = playerPieceLocation2.getKey();
+                                double locationY2 = playerPieceLocation2.getValue();
+                                int playerID2 = dataIn.readInt();
                                 int currentPlayerPosition = dataIn.readInt();
                                 boolean isInJail = dataIn.readBoolean();
 
@@ -789,6 +820,24 @@ public class ClientMainNew extends Application {
                                     gameController.setCurrentRollAmountLabelValue(currentRoll.getKey() + currentRoll.getValue());
                                     gameController.getRollDiceButton().setDisable(!Objects.equals
                                             (currentRoll.getKey(), currentRoll.getValue()) || isInJail);
+                                    switch (playerID2) {
+                                        case 0:
+                                            gameController.getPlayerOnePiece().setLayoutX(locationX2);
+                                            gameController.getPlayerOnePiece().setLayoutY(locationY2);
+                                            break;
+                                        case 1:
+                                            gameController.getPlayerTwoPiece().setLayoutX(locationX2);
+                                            gameController.getPlayerTwoPiece().setLayoutY(locationY2);
+                                            break;
+                                        case 2:
+                                            gameController.getPlayerThreePiece().setLayoutX(locationX2);
+                                            gameController.getPlayerThreePiece().setLayoutY(locationY2);
+                                            break;
+                                        case 3:
+                                            gameController.getPlayerFourPiece().setLayoutX(locationX2);
+                                            gameController.getPlayerFourPiece().setLayoutY(locationY2);
+                                            break;
+                                    }
                                     Alert alert = new Alert(Alert.AlertType.INFORMATION);
                                     alert.setTitle("Dice roll");
                                     alert.setHeaderText("You rolled: " + dice1 + " and " + dice2 +

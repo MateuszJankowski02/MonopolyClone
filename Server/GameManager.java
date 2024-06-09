@@ -31,7 +31,7 @@ public class GameManager {
         this.streetSets = new ArrayList<>();
 
         for(String login : usersLogins){
-            players.put(login, new Player());
+            players.put(login, new Player(usersLogins.size()));
         }
         if (players.size() < 2 || players.size() > 4) throw new IllegalArgumentException("Invalid number of players");
 

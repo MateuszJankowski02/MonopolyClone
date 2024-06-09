@@ -2,6 +2,7 @@ package Server;
 
 import Lobby.Lobby;
 import User.User;
+import javafx.util.Pair;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -62,5 +63,10 @@ public class ServerMainNew {
     public static void notifyClientNextTurn(int clientID, Lobby lobby){
         //notify client
         clients.get(clientID).notifyListenersNextTurn(lobby);
+    }
+
+    public static void notifyClientPlayerMoved(int clientID, Pair<Double, Double> newLocation, int currentPlayerID){
+        //notify client
+        clients.get(clientID).notifyListenersPlayerMoved(newLocation, currentPlayerID);
     }
 }

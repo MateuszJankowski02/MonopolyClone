@@ -595,9 +595,9 @@
       <Circle fx:id="playerTwoPieceExample" fill="#ff1fea" layoutX="368.0" layoutY="650.0" radius="13.0" stroke="BLACK" strokeType="INSIDE" />
       <Circle fx:id="playerThreePieceExample" fill="#1fff3d" layoutX="442.0" layoutY="650.0" radius="13.0" stroke="BLACK" strokeType="INSIDE" />
       <Circle fx:id="playerFourPieceExample" fill="#ff1f1f" layoutX="515.0" layoutY="650.0" radius="13.0" stroke="BLACK" strokeType="INSIDE" />
-      <Circle fx:id="playerOnePiece" fill="#0084ff" layoutX="790.0" layoutY="865.0" radius="13.0" stroke="BLACK" strokeType="INSIDE" />
-      <Circle fx:id="playerTwoPiece" fill="#ff1fea" layoutX="865.0" layoutY="865.0" radius="13.0" stroke="BLACK" strokeType="INSIDE" />
-      <Circle fx:id="playerThreePiece" fill="#1fff3d" layoutX="790.0" layoutY="790.0" radius="13.0" stroke="BLACK" strokeType="INSIDE" />
-      <Circle fx:id="playerFourPiece" fill="#ff1f1f" layoutX="865.0" layoutY="790.0" radius="13.0" stroke="BLACK" strokeType="INSIDE" />
+      <Circle fx:id="playerOnePiece" fill="#0084ff" layoutX="790.0" layoutY="790.0" radius="13.0" stroke="BLACK" strokeType="INSIDE" />
+      <Circle fx:id="playerTwoPiece" fill="#ff1fea" layoutX="865.0" layoutY="790.0" radius="13.0" stroke="BLACK" strokeType="INSIDE" />
+      <Circle fx:id="playerThreePiece" fill="#1fff3d" layoutX="790.0" layoutY="865.0" radius="13.0" stroke="BLACK" strokeType="INSIDE" />
+      <Circle fx:id="playerFourPiece" fill="#ff1f1f" layoutX="865.0" layoutY="865.0" radius="13.0" stroke="BLACK" strokeType="INSIDE" />
    </children>
 </AnchorPane>

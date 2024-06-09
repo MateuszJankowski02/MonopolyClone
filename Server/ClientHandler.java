@@ -122,6 +122,18 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    public void notifyListenersPlayerMoved(Pair<Double, Double> newLocation, int currentPlayerID){
+        try{
+            dataOut.writeUTF("updatePlayerLocation");
+            dataOut.writeDouble(newLocation.getKey());
+            dataOut.writeDouble(newLocation.getValue());
+            dataOut.writeInt(currentPlayerID);
+            dataOut.flush();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     interface Command {
         void execute(DataInputStream dataIn, DataOutputStream dataOut, int clientID) throws IOException;
@@ -346,13 +358,24 @@ public class ClientHandler implements Runnable {
 
             Lobby lobby = ServerMainNew.lobbies.getLobbyByName(lobbyName);
             Pair<Integer, Integer> currentRoll = lobby.getGameManager().getCurrentPlayer().rollDice();
+            Pair<Double, Double> newLocation = lobby.getGameManager().getCurrentPlayer()
+                    .moveAmountRolled(currentRoll.getKey() + currentRoll.getValue());
 
+            int currentPlayerID = lobby.getGameManager().getCurrentPlayer().getPlayerID();
             boolean isInJail = lobby.getGameManager().getCurrentPlayer().isInJail();
             int newSpace = lobby.getGameManager().getCurrentPlayer().getCurrentSpace();
             dataOut.writeInt(currentRoll.getKey());
             dataOut.writeInt(currentRoll.getValue());
+            dataOut.writeDouble(newLocation.getKey());
+            dataOut.writeDouble(newLocation.getValue());
+            dataOut.writeInt(currentPlayerID);
             dataOut.writeInt(newSpace);
             dataOut.writeBoolean(isInJail);
+            dataOut.flush();
+
+            ArrayList<Integer> listOfListeners = lobby.getListenersIDsCopy();
+
+            listOfListeners.forEach(listenerID -> ServerMainNew.notifyClientPlayerMoved(listenerID, newLocation, currentPlayerID));
         }
     }
 
@@ -378,7 +401,6 @@ public class ClientHandler implements Runnable {
             ArrayList<Integer> listOfListeners = lobby.getListenersIDsCopy();
 
             listOfListeners.forEach(listenerID -> ServerMainNew.notifyClientNextTurn(listenerID, lobby));
-
         }
     }
 
