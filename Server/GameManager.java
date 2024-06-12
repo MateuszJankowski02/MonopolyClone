@@ -11,13 +11,6 @@ import java.util.HashMap;
 
 public class GameManager {
 
-    /*
-    start game ->
-    notify listeners that game started ->
-    start new GameManager for chosen lobby ->
-    create 'game scene' for all clients in the lobby that gets data from thats lobbys GameManager
-     */
-
     private static int gameID = 0;
     private HashMap<String, Player> players;
     private ArrayList<Board> boardSpaces;
@@ -40,6 +33,8 @@ public class GameManager {
 
         currentPlayerLogin = usersLogins.get(randomPlayer);
         currentPlayer = players.get(currentPlayerLogin);
+
+        startGame();
 
         gameID++;
     }
@@ -173,6 +168,14 @@ public class GameManager {
         return players;
     }
 
+    public ArrayList<Integer> getPlayersMoney() {
+        ArrayList<Integer> money = new ArrayList<>();
+        for (Player player : players.values()) {
+            money.add(player.getMoney());
+        }
+        return money;
+    }
+
     private void populateStreets() {
         streetSets.add(new StreetSet("Brown", 2, 50));
         streetSets.add(new StreetSet("Light Blue", 3, 50));
@@ -267,7 +270,7 @@ public class GameManager {
         // Space 12
         boardSpaces.add(new BoardSpaceUtility(
                 new BoardSpace(13, "Electric Company", SpaceType.UTILITY),
-                150,
+                200,
                 new ArrayList<>(Arrays.asList(4, 10))
         ));
         // Space 13
@@ -433,8 +436,8 @@ public class GameManager {
         ));
         // Space 36
         boardSpaces.add(new BoardSpaceEvent(
-                new BoardSpace(37, "Luxury Tax", SpaceType.EVENT),
-                SpaceEventType.LUXURY_TAX
+                new BoardSpace(37, "Chance", SpaceType.EVENT),
+                SpaceEventType.CHANCE
         ));
         // Space 37
         boardSpaces.add(new BoardSpaceStreet(
@@ -444,10 +447,11 @@ public class GameManager {
                 streetSets.get(7).getHouseCost(),
                 new ArrayList<>(Arrays.asList(35, 175, 500, 1100, 1300, 1500))
         ));
+
         // Space 38
         boardSpaces.add(new BoardSpaceEvent(
-                new BoardSpace(39, "Chance", SpaceType.EVENT),
-                SpaceEventType.CHANCE
+                new BoardSpace(39, "Luxury Tax", SpaceType.EVENT),
+                SpaceEventType.LUXURY_TAX
         ));
         // Space 39
         boardSpaces.add(new BoardSpaceStreet(

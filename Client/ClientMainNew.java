@@ -316,6 +316,14 @@ public class ClientMainNew extends Application {
                 return;
             }
 
+            if(!createLobbyLayout.getMaxPlayersField().getText().matches("[0-9]+")){
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Error");
+                alert.setHeaderText("Invalid character");
+                alert.setContentText("Please enter a valid number of players");
+                alert.showAndWait();
+                return;
+            }
             int maxPlayersTest = Integer.parseInt(createLobbyLayout.getMaxPlayersField().getText());
             if (maxPlayersTest < 2 || maxPlayersTest > 4) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -740,7 +748,6 @@ public class ClientMainNew extends Application {
                                         gameController.getEndTurnButton().setDisable(true);
                                     }
                                 });
-
                                 break;
                             case "updatePlayerLocation":
                                 Pair<Double, Double> playerPieceLocation = new Pair<>(dataIn.readDouble(), dataIn.readDouble());
@@ -765,6 +772,32 @@ public class ClientMainNew extends Application {
                                         case 3:
                                             gameController.getPlayerFourPiece().setLayoutX(locationX);
                                             gameController.getPlayerFourPiece().setLayoutY(locationY);
+                                            break;
+                                    }
+                                });
+                                break;
+                            case "refreshMoney":
+                                ArrayList<Integer> money = new ArrayList<>();
+                                int moneySize = dataIn.readInt();
+                                for (int i = 0; i < moneySize; i++) {
+                                    money.add(dataIn.readInt());
+                                }
+                                Platform.runLater(() -> {
+                                    switch (moneySize) {
+                                        case 2:
+                                            gameController.setPlayerOneCashValue(money.get(0));
+                                            gameController.setPlayerTwoCashValue(money.get(1));
+                                            break;
+                                        case 3:
+                                            gameController.setPlayerOneCashValue(money.get(0));
+                                            gameController.setPlayerTwoCashValue(money.get(1));
+                                            gameController.setPlayerThreeCashValue(money.get(2));
+                                            break;
+                                        case 4:
+                                            gameController.setPlayerOneCashValue(money.get(0));
+                                            gameController.setPlayerTwoCashValue(money.get(1));
+                                            gameController.setPlayerThreeCashValue(money.get(2));
+                                            gameController.setPlayerFourCashValue(money.get(3));
                                             break;
                                     }
                                 });
@@ -809,11 +842,16 @@ public class ClientMainNew extends Application {
                                 Pair<Integer, Integer> currentRoll = new Pair<>(dataIn.readInt(), dataIn.readInt());
                                 int dice1 = currentRoll.getKey();
                                 int dice2 = currentRoll.getValue();
+                                System.out.println("Dice 1: " + dice1 + " Dice 2: " + dice2);
                                 Pair<Double, Double> playerPieceLocation2 = new Pair<>(dataIn.readDouble(), dataIn.readDouble());
                                 double locationX2 = playerPieceLocation2.getKey();
                                 double locationY2 = playerPieceLocation2.getValue();
+                                System.out.println("Location X: " + locationX2 + " Location Y: " + locationY2);
                                 int playerID2 = dataIn.readInt();
                                 int currentPlayerPosition = dataIn.readInt();
+                                System.out.println("Current player position: " + currentPlayerPosition);
+                                boolean isInJail = dataIn.readBoolean();
+
 
 
                                 Platform.runLater(() -> {
@@ -840,10 +878,18 @@ public class ClientMainNew extends Application {
                                     }
                                     Alert alert = new Alert(Alert.AlertType.INFORMATION);
                                     alert.setTitle("Dice roll");
+                                    if(!isInJail){
                                     alert.setHeaderText("You rolled: " + dice1 + " and " + dice2 +
-                                            ". Moved to position: " + currentPlayerPosition+1);
+                                            ". Moved to position: " + currentPlayerPosition);
+                                    }else{
+                                        alert.setHeaderText("You rolled: " + dice1 + " and " + dice2 +
+                                                ". You are in jail");
+                                    }
                                     alert.show();
                                 });
+
+                                eventHandlerClient(dataIn);
+
                                 break;
                             case "stopGameListener":
                                 break label;
@@ -855,6 +901,177 @@ public class ClientMainNew extends Application {
             }
         });
         gameListener.start();
+    }
+
+    public void eventHandlerClient(DataInputStream dataIn){
+        try{
+            String eventName = dataIn.readUTF();
+            System.out.println("Event name: " + eventName);
+
+            switch (eventName){
+                case "buyStreet":
+                    int value = dataIn.readInt();
+                    Platform.runLater(() -> {
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                        alert.setTitle("Buy street");
+                        alert.setHeaderText("You bought a street");
+                        alert.setContentText("You bought a street for: " + value);
+                        alert.show();
+                    });
+                    break;
+                case "noBuyStreet":
+                    Platform.runLater(() -> {
+                        Alert alert2 = new Alert(Alert.AlertType.INFORMATION);
+                        alert2.setTitle("Not enough money");
+                        alert2.setHeaderText("You don't have enough money to buy this street");
+                        alert2.setContentText("You need more money to buy this street");
+                        alert2.show();
+                    });
+                    break;
+                case "buyUtility":
+                    int utilityValue = dataIn.readInt();
+                    Platform.runLater(() -> {
+                        Alert alert3 = new Alert(Alert.AlertType.INFORMATION);
+                        alert3.setTitle("Buy utility");
+                        alert3.setHeaderText("You bought a utility");
+                        alert3.setContentText("You bought a utility for: " + utilityValue);
+                        alert3.show();
+                    });
+                    break;
+                case "noBuyUtility":
+                    Platform.runLater(() -> {
+                        Alert alert4 = new Alert(Alert.AlertType.INFORMATION);
+                        alert4.setTitle("Not enough money");
+                        alert4.setHeaderText("You don't have enough money to buy this utility");
+                        alert4.setContentText("You need more money to buy this utility");
+                        alert4.show();
+                    });
+                    break;
+                case "bankrupt":
+                    Platform.runLater(() -> {
+                        Alert alert3 = new Alert(Alert.AlertType.INFORMATION);
+                        alert3.setTitle("Bankrupt");
+                        alert3.setHeaderText("You are bankrupt");
+                        alert3.setContentText("You are bankrupt, you lost the game");
+                        alert3.show();
+                    });
+                    break;
+                case "payRent":
+                    int rent = dataIn.readInt();
+                    Platform.runLater(() -> {
+                        Alert alert4 = new Alert(Alert.AlertType.INFORMATION);
+                        alert4.setTitle("Pay rent");
+                        alert4.setHeaderText("You have to pay rent");
+                        alert4.setContentText("You have to pay rent: " + rent + "$");
+                        alert4.show();
+                    });
+                    break;
+                case "ownProperty":
+                    Platform.runLater(() -> {
+                        Alert alert5 = new Alert(Alert.AlertType.INFORMATION);
+                        alert5.setTitle("Own property");
+                        alert5.setHeaderText("You own this property");
+                        alert5.setContentText("You own this property, you don't have to pay rent");
+                        alert5.show();
+                    });
+                    break;
+                case "buyRailroad":
+                    int railroadValue = dataIn.readInt();
+                    Platform.runLater(() -> {
+                        Alert alert6 = new Alert(Alert.AlertType.INFORMATION);
+                        alert6.setTitle("Buy railroad");
+                        alert6.setHeaderText("You bought a railroad");
+                        alert6.setContentText("You bought a railroad for: " + railroadValue);
+                        alert6.show();
+                    });
+                    break;
+                case "noBuyRailroad":
+                    Platform.runLater(() -> {
+                        Alert alert7 = new Alert(Alert.AlertType.INFORMATION);
+                        alert7.setTitle("Not enough money");
+                        alert7.setHeaderText("You don't have enough money to buy this railroad");
+                        alert7.setContentText("You need more money to buy this railroad");
+                        alert7.show();
+                    });
+                    break;
+                case "payChest":
+                    int chestValuePay = dataIn.readInt();
+                    Platform.runLater(() -> {
+                        Alert alert8 = new Alert(Alert.AlertType.INFORMATION);
+                        alert8.setTitle("Chest");
+                        alert8.setHeaderText("You've got scammed");
+                        alert8.setContentText("You bought a chest for" + chestValuePay + "$ and there was nothing in it");
+                        alert8.show();
+                    });
+                    break;
+                case "receiveChest":
+                    int chestValue = dataIn.readInt();
+                    Platform.runLater(() -> {
+                        Alert alert9 = new Alert(Alert.AlertType.INFORMATION);
+                        alert9.setTitle("Chest");
+                        alert9.setHeaderText("You received a chest");
+                        alert9.setContentText("You received a chest with " + chestValue + "$ in it");
+                        alert9.show();
+                    });
+                    break;
+                case "incomeTax":
+                    int incomeTaxValue = dataIn.readInt();
+                    Platform.runLater(() -> {
+                        Alert alert9 = new Alert(Alert.AlertType.INFORMATION);
+                        alert9.setTitle("Income tax");
+                        alert9.setHeaderText("You have to pay income tax");
+                        alert9.setContentText("You have to pay: " + incomeTaxValue + "$");
+                        alert9.show();
+                    });
+                    break;
+                case "luxuryTax":
+                    int luxuryTaxValue = dataIn.readInt();
+                    Platform.runLater(() -> {
+                        Alert alert10 = new Alert(Alert.AlertType.INFORMATION);
+                        alert10.setTitle("Luxury tax");
+                        alert10.setHeaderText("You have to pay luxury tax");
+                        alert10.setContentText("You have to pay: " + luxuryTaxValue + "$");
+                        alert10.show();
+                    });
+                    break;
+                case "goToJail":
+                    Platform.runLater(() -> {
+                        Alert alert11 = new Alert(Alert.AlertType.INFORMATION);
+                        alert11.setTitle("Go to jail");
+                        alert11.setHeaderText("You have to go to jail");
+                        alert11.setContentText("You have to go to jail");
+                        alert11.show();
+                    });
+                    break;
+                case "payChance":
+                    int chanceValuePay = dataIn.readInt();
+                    Platform.runLater(() -> {
+                        Alert alert12 = new Alert(Alert.AlertType.INFORMATION);
+                        alert12.setTitle("Chance");
+                        alert12.setHeaderText("You've lost your wallet");
+                        alert12.setContentText("You lost your wallet with " + chanceValuePay + "$ in it");
+                        alert12.show();
+                    });
+                    break;
+                case "receiveChance":
+                    int chanceValue = dataIn.readInt();
+                    Platform.runLater(() -> {
+                        Alert alert13 = new Alert(Alert.AlertType.INFORMATION);
+                        alert13.setTitle("Chance");
+                        alert13.setHeaderText("You've found money");
+                        alert13.setContentText("While walking you found " + chanceValue + "$ on the ground");
+                        alert13.show();
+                    });
+                    break;
+                default:
+                    System.out.println("Unknown event");
+                    break;
+            }
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
     }
 
     public void initializeGameController(GameController gameController, ArrayList<String> userNicknames,

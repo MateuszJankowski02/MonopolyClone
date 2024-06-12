@@ -98,6 +98,8 @@ public class Player {
         }else {
             currentSpace = nextSpace;
         }
+        System.out.println("Player " + playerID + " moved to space " + currentSpace);
+        System.out.println("Player coordinates: " + playerPieceLocations.get(currentSpace));
         return playerPieceLocations.get(currentSpace);
     }
 
@@ -154,73 +156,73 @@ public class Player {
         switch (playerID) {
             case 0:
                 playerPieceLocations.put(0, new Pair<>(790.0, 790.0));
-                for(int i = 0; i < 8; i++){
+                for(int i = 0; i < 9; i++){
                     playerPieceLocations.put(i+1, new Pair<>(715.0 - (74.5*i), 815.0));
                 }
                 playerPieceLocations.put(10, new Pair<>(15.0, 790.0));
-                for(int i = 0; i < 8; i++){
+                for(int i = 0; i < 9; i++){
                     playerPieceLocations.put(i+11, new Pair<>(65.0, 715.0 - (74.5*i)));
                 }
                 playerPieceLocations.put(20, new Pair<>(15.0, 15.0));
-                for(int i = 0; i < 8; i++){
+                for(int i = 0; i < 9; i++){
                     playerPieceLocations.put(i+21, new Pair<>(119.0 + (74.5*i), 40.0));
                 }
                 playerPieceLocations.put(30, new Pair<>(790.0, 15.0));
-                for(int i = 0; i < 8; i++){
+                for(int i = 0; i < 9; i++){
                     playerPieceLocations.put(i+31, new Pair<>(815.0, 165.0 + (74.5*i)));
                 }
                 break;
             case 1:
                 playerPieceLocations.put(1, new Pair<>(865.0, 790.0));
-                for(int i = 0; i < 8; i++){
+                for(int i = 0; i < 9; i++){
                     playerPieceLocations.put(i+1, new Pair<>(763.0 - (74.5*i), 815.0));
                 }
                 playerPieceLocations.put(10, new Pair<>(91.0, 790.0));
-                for(int i = 0; i < 8; i++){
+                for(int i = 0; i < 9; i++){
                     playerPieceLocations.put(i+11, new Pair<>(65.0, 763.0 - (74.5*i)));
                 }
                 playerPieceLocations.put(20, new Pair<>(91.0, 15.0));
-                for(int i = 0; i < 8; i++){
+                for(int i = 0; i < 9; i++){
                     playerPieceLocations.put(i+21, new Pair<>(165.0 + (74.5*i), 40.0));
                 }
                 playerPieceLocations.put(30, new Pair<>(865.0, 15.0));
-                for(int i = 0; i < 8; i++){
+                for(int i = 0; i < 9; i++){
                     playerPieceLocations.put(i+31, new Pair<>(815.0, 119.0 + (74.5*i)));
                 }
                 break;
             case 2:
                 playerPieceLocations.put(2, new Pair<>(790.0, 865.0));
-                for(int i = 0; i < 8; i++){
+                for(int i = 0; i < 9; i++){
                     playerPieceLocations.put(i+1, new Pair<>(715.0 - (74.5*i), 850.0));
                 }
                 playerPieceLocations.put(10, new Pair<>(15.0, 865.0));
-                for(int i = 0; i < 8; i++){
+                for(int i = 0; i < 9; i++){
                     playerPieceLocations.put(i+11, new Pair<>(30.0, 715.0 - (74.5*i)));
                 }
                 playerPieceLocations.put(20, new Pair<>(15.0, 91.0));
-                for(int i = 0; i < 8; i++){
+                for(int i = 0; i < 9; i++){
                     playerPieceLocations.put(i+21, new Pair<>(119.0 + (74.5*i), 75.0));
                 }
                 playerPieceLocations.put(30, new Pair<>(790.0, 91.0));
-                for(int i = 0; i < 8; i++){
+                for(int i = 0; i < 9; i++){
                     playerPieceLocations.put(i+31, new Pair<>(855.0, 165.0 + (74.5*i)));
                 }
                 break;
             case 3:
                 playerPieceLocations.put(3, new Pair<>(865.0, 865.0));
-                for(int i = 0; i < 8; i++){
+                for(int i = 0; i < 9; i++){
                     playerPieceLocations.put(i+1, new Pair<>(763.0 - (74.5*i), 850.0));
                 }
                 playerPieceLocations.put(10, new Pair<>(91.0, 865.0));
-                for(int i = 0; i < 8; i++){
+                for(int i = 0; i < 9; i++){
                     playerPieceLocations.put(i+11, new Pair<>(30.0, 763.0 - (74.5*i)));
                 }
                 playerPieceLocations.put(20, new Pair<>(91.0, 91.0));
-                for(int i = 0; i < 8; i++){
+                for(int i = 0; i < 9; i++){
                     playerPieceLocations.put(i+21, new Pair<>(165.0 + (74.5*i), 75.0));
                 }
                 playerPieceLocations.put(30, new Pair<>(865.0, 91.0));
-                for(int i = 0; i < 8; i++){
+                for(int i = 0; i < 9; i++){
                     playerPieceLocations.put(i+31, new Pair<>(855.0, 119.0 + (74.5*i)));
                 }
                 break;

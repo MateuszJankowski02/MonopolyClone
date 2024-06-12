@@ -6,8 +6,10 @@ import javafx.util.Pair;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.lang.reflect.Array;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class ServerMainNew {
@@ -68,5 +70,10 @@ public class ServerMainNew {
     public static void notifyClientPlayerMoved(int clientID, Pair<Double, Double> newLocation, int currentPlayerID){
         //notify client
         clients.get(clientID).notifyListenersPlayerMoved(newLocation, currentPlayerID);
+    }
+
+    public static void notifyClientRefreshMoney(int clientID, ArrayList<Integer> money){
+        //notify client
+        clients.get(clientID).notifyListenersRefreshMoney(money);
     }
 }

@@ -584,11 +584,35 @@
             <Button fx:id="rollDiceButton" alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false" onAction="#rollDiceButtonOnAction" prefHeight="25.0" prefWidth="70.0" text="Roll Dice" textAlignment="CENTER" GridPane.columnIndex="2" GridPane.rowIndex="4" />
             <Button fx:id="endTurnButton" alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false" onAction="#endTurnButtonOnAction" prefHeight="25.0" prefWidth="70.0" text="End Turn" textAlignment="CENTER" GridPane.columnIndex="3" GridPane.rowIndex="4" />
             <Label fx:id="currentPlayerLabel" prefHeight="29.0" prefWidth="74.0" text="TBD" GridPane.columnIndex="4" GridPane.rowIndex="2" />
-            <Label fx:id="currentRollAmountLabel" prefHeight="29.0" prefWidth="74.0" text="0" GridPane.columnIndex="4" GridPane.rowIndex="3" />
+            <Label fx:id="currentRollAmountLabel" prefHeight="29.0" prefWidth="74.0" text="TBD" GridPane.columnIndex="4" GridPane.rowIndex="3" />
             <Label fx:id="playerOneLabel" alignment="BOTTOM_CENTER" contentDisplay="BOTTOM" prefHeight="88.0" prefWidth="75.0" text="Player 1" textAlignment="CENTER" wrapText="true" GridPane.columnIndex="3" GridPane.rowIndex="7" />
             <Label fx:id="playerTwoLabel" alignment="BOTTOM_CENTER" contentDisplay="BOTTOM" prefHeight="102.0" prefWidth="75.0" text="Player 2" textAlignment="CENTER" wrapText="true" GridPane.columnIndex="4" GridPane.rowIndex="7" />
             <Label fx:id="playerThreeLabel" alignment="BOTTOM_CENTER" contentDisplay="BOTTOM" prefHeight="112.0" prefWidth="75.0" text="Player 3" textAlignment="CENTER" wrapText="true" GridPane.columnIndex="5" GridPane.rowIndex="7" />
             <Label fx:id="playerFourLabel" alignment="BOTTOM_CENTER" contentDisplay="BOTTOM" prefHeight="99.0" prefWidth="74.0" text="Player 4" textAlignment="CENTER" wrapText="true" GridPane.columnIndex="6" GridPane.rowIndex="7" />
+            <Label fx:id="playerOneCashLabel" prefHeight="71.0" prefWidth="132.0" text="Player 1 cash:" wrapText="true" GridPane.columnIndex="6" GridPane.columnSpan="2" GridPane.rowIndex="2">
+               <font>
+                  <Font name="Arial Bold" size="16.0" />
+               </font>
+            </Label>
+            <Label fx:id="playerTwoCashLabel" prefHeight="73.0" prefWidth="132.0" text="Player 2 cash:" wrapText="true" GridPane.columnIndex="6" GridPane.columnSpan="2" GridPane.rowIndex="3">
+               <font>
+                  <Font name="Arial Bold" size="16.0" />
+               </font>
+            </Label>
+            <Label fx:id="playerThreeCashLabel" prefHeight="75.0" prefWidth="132.0" text="Player 3 cash:" wrapText="true" GridPane.columnIndex="6" GridPane.columnSpan="2" GridPane.rowIndex="4">
+               <font>
+                  <Font name="Arial Bold" size="16.0" />
+               </font>
+            </Label>
+            <Label fx:id="playerFourCashLabel" prefHeight="72.0" prefWidth="132.0" text="Player 4 cash:" wrapText="true" GridPane.columnIndex="6" GridPane.columnSpan="2" GridPane.rowIndex="5">
+               <font>
+                  <Font name="Arial Bold" size="16.0" />
+               </font>
+            </Label>
+            <Label fx:id="playerOneCashValue" prefHeight="29.0" prefWidth="74.0" text="TBD" GridPane.columnIndex="8" GridPane.rowIndex="2" />
+            <Label fx:id="playerTwoCashValue" prefHeight="29.0" prefWidth="74.0" text="TBD" GridPane.columnIndex="8" GridPane.rowIndex="3" />
+            <Label fx:id="playerThreeCashValue" prefHeight="29.0" prefWidth="74.0" text="TBD" GridPane.columnIndex="8" GridPane.rowIndex="4" />
+            <Label fx:id="playerFourCashValue" prefHeight="29.0" prefWidth="74.0" text="TBD" GridPane.columnIndex="8" GridPane.rowIndex="5" />
          </children>
       </GridPane>
       <Circle fx:id="playerOnePieceExample" fill="#0084ff" layoutX="292.0" layoutY="650.0" radius="13.0" stroke="BLACK" strokeType="INSIDE" />

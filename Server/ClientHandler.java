@@ -135,6 +135,20 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    // refresh money of all players
+    public void notifyListenersRefreshMoney(ArrayList<Integer> money){
+        try{
+            dataOut.writeUTF("refreshMoney");
+            dataOut.writeInt(money.size());
+            for (int m : money){
+                dataOut.writeInt(m);
+            }
+            dataOut.flush();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     interface Command {
         void execute(DataInputStream dataIn, DataOutputStream dataOut, int clientID) throws IOException;
@@ -346,7 +360,8 @@ public class ClientHandler implements Runnable {
     public static class StopLobbyListenerCommand implements Command {
         @Override
         public void execute(DataInputStream dataIn, DataOutputStream dataOut, int ClientID) throws IOException {
-            dataOut.writeUTF("stopListener");
+            String command = "stopListener";
+            dataOut.writeUTF(command);
         }
     }
 
@@ -359,8 +374,10 @@ public class ClientHandler implements Runnable {
 
             Lobby lobby = ServerMainNew.lobbies.getLobbyByName(lobbyName);
             Pair<Integer, Integer> currentRoll = lobby.getGameManager().getCurrentPlayer().rollDice();
+            System.out.println("Current roll: " + currentRoll.getKey() + ", " + currentRoll.getValue());
             Pair<Double, Double> newLocation = lobby.getGameManager().getCurrentPlayer()
                     .moveAmountRolled(currentRoll.getKey() + currentRoll.getValue());
+            System.out.println("New location: " + newLocation.getKey() + ", " + newLocation.getValue());
 
             int currentPlayerID = lobby.getGameManager().getCurrentPlayer().getPlayerID();
             boolean isInJail = lobby.getGameManager().getCurrentPlayer().isInJail();
@@ -376,11 +393,15 @@ public class ClientHandler implements Runnable {
             dataOut.writeBoolean(isInJail);
             dataOut.flush();
 
+            handleSpaceEvent(dataOut, lobby, currentPlayer, newSpace);
+
             ArrayList<Integer> listOfListeners = lobby.getListenersIDsCopy();
 
             listOfListeners.forEach(listenerID -> ServerMainNew.notifyClientPlayerMoved(listenerID, newLocation, currentPlayerID));
 
-            handleEvent(dataIn, dataOut, lobby, currentPlayer, newSpace);
+
+
+            listOfListeners.forEach(listenerID -> ServerMainNew.notifyClientRefreshMoney(listenerID, lobby.getGameManager().getPlayersMoney()));
 
         }
     }
@@ -410,12 +431,10 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    public static void handleEvent(DataInputStream dataIn, DataOutputStream dataOut, Lobby lobby, Player currentPlayer,
-                                   int newSpace){
+    public static void handleSpaceEvent(DataOutputStream dataOut, Lobby lobby, Player currentPlayer,
+                                        int newSpace){
         try {
-            dataOut.writeUTF("handleEvent");
-
-            Pair<String, Integer> handleEvent = lobby.getGameManager().handleEvent(newSpace ,currentPlayer);
+            Pair<String, Integer> handleEvent = lobby.getGameManager().handleSpaceEvent(newSpace ,currentPlayer);
             String eventMessage = handleEvent.getKey();
             int eventValue = handleEvent.getValue();
 
@@ -427,6 +446,13 @@ public class ClientHandler implements Runnable {
                 case "noBuyStreet":
                     dataOut.writeUTF("noBuyStreet");
                     break;
+                case "buyUtility":
+                    dataOut.writeUTF("buyUtility");
+                    dataOut.writeInt(eventValue);
+                    break;
+                case "noBuyUtility":
+                    dataOut.writeUTF("noBuyUtility");
+                    break;
                 case "bankrupt":
                     dataOut.writeUTF("bankrupt");
                     break;
@@ -435,7 +461,7 @@ public class ClientHandler implements Runnable {
                     dataOut.writeInt(eventValue);
                     break;
                 case "ownProperty":
-                    dataOut.writeUTF("noPayRent");
+                    dataOut.writeUTF("ownProperty");
                     break;
                 case "buyRailroad":
                     dataOut.writeUTF("buyRailroad");
@@ -445,7 +471,23 @@ public class ClientHandler implements Runnable {
                     dataOut.writeUTF("noBuyRailroad");
                     break;
                 case "chest":
-                    dataOut.writeUTF("jail");
+                    ArrayList<Integer> chestValues = new ArrayList<>();
+                    chestValues.add(50);
+                    chestValues.add(100);
+                    chestValues.add(150);
+                    chestValues.add(200);
+                    int randomIndex = (int) (Math.random() * chestValues.size());
+                    int randomValue = chestValues.get(randomIndex);
+                    boolean pay = Math.random() < 0.5;
+                    if (pay) {
+                        currentPlayer.addMoney(-randomValue);
+                        dataOut.writeUTF("payChest");
+                        dataOut.writeInt(randomValue);
+                    } else {
+                        currentPlayer.addMoney(randomValue);
+                        dataOut.writeUTF("receiveChest");
+                        dataOut.writeInt(randomValue);
+                    }
                     break;
                 case "incomeTax":
                     dataOut.writeUTF("incomeTax");
@@ -459,7 +501,23 @@ public class ClientHandler implements Runnable {
                     dataOut.writeUTF("goToJail");
                     break;
                 case "chance":
-                    dataOut.writeUTF("chance");
+                    ArrayList<Integer> chanceValues = new ArrayList<>();
+                    chanceValues.add(50);
+                    chanceValues.add(100);
+                    chanceValues.add(150);
+                    chanceValues.add(200);
+                    int randomIndexChance = (int) (Math.random() * chanceValues.size());
+                    int randomValueChance = chanceValues.get(randomIndexChance);
+                    boolean payChance = Math.random() < 0.5;
+                    if (payChance) {
+                        currentPlayer.addMoney(-randomValueChance);
+                        dataOut.writeUTF("payChance");
+                        dataOut.writeInt(randomValueChance);
+                    } else {
+                        currentPlayer.addMoney(randomValueChance);
+                        dataOut.writeUTF("receiveChance");
+                        dataOut.writeInt(randomValueChance);
+                    }
                     break;
                 default:
                     dataOut.writeUTF("noEvent");
